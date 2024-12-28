@@ -2,43 +2,32 @@
 pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 
 /**
  * @title OpenCampusID
- * @dev Manages decentralized identities and credentials for EduImpact users
+ * @dev Contract to verify and extend OCID profiles with EduImpact-specific data
  */
-contract OpenCampusID is ERC721, Ownable {
-    using Counters for Counters.Counter;
-    Counters.Counter private _tokenIds;
-
-    struct Credential {
-        string credentialType; // e.g., "course", "certification", "contribution"
-        string ipfsHash;      // IPFS hash of the credential details
-        uint256 timestamp;
-        bool isVerified;
-        address verifier;
+contract OpenCampusID is Ownable {
+    struct ExtendedProfile {
+        string ocid;           // Open Campus ID from the SDK
+        string ethAddress;     // ETH address associated with OCID
+        string[] skills;       // Technical skills
+        uint256 reputation;    // Reputation score
+        bool isActive;         // Profile status
+        mapping(string => bool) verifiedSkills;  // Skills that have been verified
     }
 
-    struct Profile {
-        string name;
-        string ipfsHash;      // IPFS hash of additional profile data
-        uint256[] credentials;
-        bool isActive;
-    }
-
-    mapping(address => Profile) public profiles;
-    mapping(uint256 => Credential) public credentials;
+    mapping(address => ExtendedProfile) public profiles;
     mapping(address => bool) public verifiers;
 
-    event ProfileCreated(address indexed user, string name);
-    event CredentialIssued(address indexed user, uint256 indexed credentialId, string credentialType);
-    event CredentialVerified(uint256 indexed credentialId, address indexed verifier);
+    event ProfileCreated(address indexed user, string ocid);
+    event SkillAdded(address indexed user, string skill);
+    event SkillVerified(address indexed user, string skill, address verifier);
+    event ReputationUpdated(address indexed user, uint256 newReputation);
     event VerifierAdded(address indexed verifier);
     event VerifierRemoved(address indexed verifier);
 
-    constructor() ERC721("OpenCampusID", "OCID") Ownable(msg.sender) {}
+    constructor() Ownable(msg.sender) {}
 
     modifier onlyVerifier() {
         require(verifiers[msg.sender], "Not authorized as verifier");
@@ -55,79 +44,107 @@ contract OpenCampusID is ERC721, Ownable {
         emit VerifierRemoved(verifier);
     }
 
-    function createProfile(string memory name, string memory ipfsHash) external {
-        require(!profiles[msg.sender].isActive, "Profile already exists");
+    /**
+     * @dev Create or update profile with OCID data
+     * @param ocid The Open Campus ID from the SDK
+     * @param ethAddress The ETH address associated with the OCID
+     * @param initialSkills Array of initial technical skills
+     */
+    function createProfile(
+        string memory ocid,
+        string memory ethAddress,
+        string[] memory initialSkills
+    ) external {
+        ExtendedProfile storage profile = profiles[msg.sender];
         
-        profiles[msg.sender] = Profile({
-            name: name,
-            ipfsHash: ipfsHash,
-            credentials: new uint256[](0),
-            isActive: true
-        });
+        // If new profile
+        if (!profile.isActive) {
+            profile.ocid = ocid;
+            profile.ethAddress = ethAddress;
+            profile.reputation = 0;
+            profile.isActive = true;
+            emit ProfileCreated(msg.sender, ocid);
+        }
 
-        emit ProfileCreated(msg.sender, name);
+        // Update skills
+        profile.skills = initialSkills;
+        for (uint i = 0; i < initialSkills.length; i++) {
+            emit SkillAdded(msg.sender, initialSkills[i]);
+        }
     }
 
-    function issueCredential(
-        address to,
-        string memory credentialType,
-        string memory ipfsHash
-    ) external onlyVerifier returns (uint256) {
-        require(profiles[to].isActive, "Profile does not exist");
-
-        _tokenIds.increment();
-        uint256 newCredentialId = _tokenIds.current();
-
-        credentials[newCredentialId] = Credential({
-            credentialType: credentialType,
-            ipfsHash: ipfsHash,
-            timestamp: block.timestamp,
-            isVerified: true,
-            verifier: msg.sender
-        });
-
-        profiles[to].credentials.push(newCredentialId);
-        _mint(to, newCredentialId);
-
-        emit CredentialIssued(to, newCredentialId, credentialType);
-        return newCredentialId;
+    /**
+     * @dev Verify a specific skill for a user
+     * @param user Address of the user
+     * @param skill Skill to verify
+     */
+    function verifySkill(address user, string memory skill) external onlyVerifier {
+        ExtendedProfile storage profile = profiles[user];
+        require(profile.isActive, "Profile does not exist");
+        
+        profile.verifiedSkills[skill] = true;
+        emit SkillVerified(user, skill, msg.sender);
     }
 
+    /**
+     * @dev Update user's reputation score
+     * @param user Address of the user
+     * @param reputationChange Amount to change reputation by (positive or negative)
+     */
+    function updateReputation(address user, int256 reputationChange) external onlyVerifier {
+        ExtendedProfile storage profile = profiles[user];
+        require(profile.isActive, "Profile does not exist");
+
+        if (reputationChange >= 0) {
+            profile.reputation += uint256(reputationChange);
+        } else {
+            // Ensure reputation doesn't underflow
+            uint256 change = uint256(-reputationChange);
+            if (change > profile.reputation) {
+                profile.reputation = 0;
+            } else {
+                profile.reputation -= change;
+            }
+        }
+
+        emit ReputationUpdated(user, profile.reputation);
+    }
+
+    /**
+     * @dev Get profile details
+     * @param user Address of the user
+     */
     function getProfile(address user) external view returns (
-        string memory name,
-        string memory ipfsHash,
-        uint256[] memory credentialIds,
+        string memory ocid,
+        string memory ethAddress,
+        string[] memory skills,
+        uint256 reputation,
         bool isActive
     ) {
-        Profile memory profile = profiles[user];
+        ExtendedProfile storage profile = profiles[user];
         return (
-            profile.name,
-            profile.ipfsHash,
-            profile.credentials,
+            profile.ocid,
+            profile.ethAddress,
+            profile.skills,
+            profile.reputation,
             profile.isActive
         );
     }
 
-    function getCredential(uint256 credentialId) external view returns (
-        string memory credentialType,
-        string memory ipfsHash,
-        uint256 timestamp,
-        bool isVerified,
-        address verifier
-    ) {
-        Credential memory credential = credentials[credentialId];
-        return (
-            credential.credentialType,
-            credential.ipfsHash,
-            credential.timestamp,
-            credential.isVerified,
-            credential.verifier
-        );
+    /**
+     * @dev Check if a specific skill is verified
+     * @param user Address of the user
+     * @param skill Skill to check
+     */
+    function isSkillVerified(address user, string memory skill) external view returns (bool) {
+        return profiles[user].verifiedSkills[skill];
     }
 
-    function updateProfile(string memory name, string memory ipfsHash) external {
-        require(profiles[msg.sender].isActive, "Profile does not exist");
-        profiles[msg.sender].name = name;
-        profiles[msg.sender].ipfsHash = ipfsHash;
+    /**
+     * @dev Check if a profile exists and is active
+     * @param user Address to check
+     */
+    function hasActiveProfile(address user) external view returns (bool) {
+        return profiles[user].isActive;
     }
 } 

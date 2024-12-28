@@ -1,93 +1,169 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "./ui/button";
-import { useEffect, useState } from "react";
-import { useToast } from "../hooks/use-toast";
+import { usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { useWallet } from "@/lib/WalletContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
+import {
+  BookOpen,
+  GraduationCap,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Trophy,
+  User,
+  Wallet,
+} from "lucide-react";
+
+const navigation = [
+  {
+    name: "Scholarships",
+    href: "/scholarships",
+    icon: BookOpen,
+  },
+  {
+    name: "Milestones",
+    href: "/milestones",
+    icon: Trophy,
+  },
+  {
+    name: "Learn",
+    href: "/learn",
+    icon: GraduationCap,
+  },
+];
+
+const sponsorNavigation = [
+  {
+    name: "Dashboard",
+    href: "/sponsor/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    name: "Create Scholarship",
+    href: "/sponsor/create",
+    icon: BookOpen,
+  },
+];
 
 export default function Header() {
-  const [account, setAccount] = useState("");
-  const { toast } = useToast();
+  const pathname = usePathname();
+  const { isConnected, address, connect, disconnect } = useWallet();
 
-  const connectWallet = async () => {
-    if (typeof window.ethereum !== "undefined") {
-      try {
-        const accounts = await window.ethereum.request({
-          method: "eth_requestAccounts",
-        });
-        setAccount(accounts[0]);
-        toast({
-          title: "Wallet Connected",
-          description: "Successfully connected to MetaMask",
-        });
-      } catch (error) {
-        toast({
-          title: "Connection Failed",
-          description: error.message,
-          variant: "destructive",
-        });
-      }
-    } else {
-      toast({
-        title: "MetaMask Not Found",
-        description: "Please install MetaMask to use this platform",
-        variant: "destructive",
-      });
-    }
-  };
-
-  useEffect(() => {
-    // Check if already connected
-    if (typeof window.ethereum !== "undefined") {
-      window.ethereum.request({ method: "eth_accounts" }).then((accounts) => {
-        if (accounts.length > 0) {
-          setAccount(accounts[0]);
-        }
-      });
-    }
-  }, []);
+  const isSponsorRoute = pathname.startsWith("/sponsor");
+  const activeNavigation = isSponsorRoute ? sponsorNavigation : navigation;
 
   return (
-    <header className="border-b">
-      <div className="container mx-auto px-4 py-4">
-        <nav className="flex items-center justify-between">
-          <div className="flex items-center space-x-8">
-            <Link href="/" className="text-2xl font-bold">
-              EduImpact
-            </Link>
-            <div className="hidden md:flex space-x-6">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 items-center">
+        <div className="mr-4 hidden md:flex">
+          <Link href="/" className="mr-6 flex items-center space-x-2">
+            <span className="hidden font-bold sm:inline-block">EduImpact</span>
+          </Link>
+          <nav className="flex items-center space-x-6 text-sm font-medium">
+            {activeNavigation.map((item) => (
               <Link
-                href="/scholarships"
-                className="text-gray-600 hover:text-gray-900"
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "transition-colors hover:text-foreground/80",
+                  pathname === item.href
+                    ? "text-foreground"
+                    : "text-foreground/60"
+                )}
               >
-                Scholarships
+                <div className="flex items-center gap-2">
+                  <item.icon className="h-4 w-4" />
+                  {item.name}
+                </div>
               </Link>
-              <Link
-                href="/milestones"
-                className="text-gray-600 hover:text-gray-900"
-              >
-                Milestones
-              </Link>
-              {account && (
+            ))}
+          </nav>
+        </div>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild className="md:hidden">
+            <Button variant="ghost" size="icon">
+              <Menu className="h-5 w-5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-52">
+            {activeNavigation.map((item) => (
+              <DropdownMenuItem key={item.href} asChild>
                 <Link
-                  href="/profile"
-                  className="text-gray-600 hover:text-gray-900"
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-2",
+                    pathname === item.href
+                      ? "text-foreground"
+                      : "text-foreground/60"
+                  )}
                 >
-                  Profile
+                  <item.icon className="h-4 w-4" />
+                  {item.name}
                 </Link>
-              )}
-            </div>
-          </div>
-          <div>
-            {!account ? (
-              <Button onClick={connectWallet}>Connect Wallet</Button>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+          <nav className="flex items-center">
+            {isConnected ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <User className="h-4 w-4" />
+                    <span className="hidden md:inline-block">
+                      {address.slice(0, 6)}...{address.slice(-4)}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/profile"
+                      className="flex w-full items-center gap-2"
+                    >
+                      <User className="h-4 w-4" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  {!isSponsorRoute && (
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/sponsor/dashboard"
+                        className="flex w-full items-center gap-2"
+                      >
+                        <LayoutDashboard className="h-4 w-4" />
+                        Sponsor Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem
+                    className="flex items-center gap-2 text-red-600"
+                    onClick={disconnect}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Disconnect
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
-              <Button variant="outline">
-                {`${account.slice(0, 6)}...${account.slice(-4)}`}
+              <Button onClick={connect} size="sm" className="gap-2">
+                <Wallet className="h-4 w-4" />
+                Connect Wallet
               </Button>
             )}
-          </div>
-        </nav>
+          </nav>
+        </div>
       </div>
     </header>
   );
