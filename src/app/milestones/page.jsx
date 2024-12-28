@@ -1,233 +1,580 @@
 "use client";
 
-import { Button } from "../../components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../../components/ui/card";  
-import { Progress } from "../../components/ui/progress";
-import { Badge } from "../../components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
-import { CheckCircle2, Clock, FileCheck, Trophy } from "lucide-react";
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  BookOpen,
+  CheckCircle,
+  Clock,
+  Coins,
+  FileText,
+  GraduationCap,
+  Trophy,
+  XCircle,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { useWallet } from "@/lib/WalletContext";
+import { Contract, parseEther, formatEther } from "ethers";
+import ScholarshipABI from "@/config/Schloarship.json";
+import { ScholarshipsAddress } from "@/config/contractAddress";
 
-// Mock data
-const activeMilestones = [
-  {
-    id: 1,
-    scholarshipId: 1,
-    scholarshipTitle: "Cloud Computing Mastery",
-    sponsor: "CloudCorp",
-    milestone: {
-      title: "Complete AWS Certified Cloud Practitioner",
-      description: "Pass the certification exam and submit proof of completion",
-      reward: 150,
-      deadline: "2024-03-15",
+// Remove the temporary address and use the imported one
+const scholarshipAddress = ScholarshipsAddress;
+
+// Dummy data for user milestones
+const userMilestones = {
+  activeMilestones: [
+    {
+      id: 1,
+      scholarshipTitle: "Web3 Development",
+      sponsor: "BlockchainCo",
+      milestone: "Smart Contract Basics",
+      deadline: "2024-03-01",
+      reward: "500 EDU",
       progress: 65,
-      status: "in-progress",
+      requirements: [
+        { task: "Complete Solidity Basics Course", isCompleted: true },
+        { task: "Build Simple Smart Contract", isCompleted: true },
+        { task: "Pass Security Assessment", isCompleted: false },
+        { task: "Deploy to Testnet", isCompleted: false },
+      ],
     },
-  },
-  {
-    id: 2,
-    scholarshipId: 1,
-    scholarshipTitle: "Cloud Computing Mastery",
-    sponsor: "CloudCorp",
-    milestone: {
-      title: "Build Cloud Infrastructure Project",
-      description: "Deploy a scalable web application using AWS services",
-      reward: 200,
-      deadline: "2024-03-30",
-      progress: 25,
-      status: "in-progress",
+    {
+      id: 2,
+      scholarshipTitle: "AI Research Program",
+      sponsor: "TechGiants",
+      milestone: "Research Proposal",
+      deadline: "2024-03-15",
+      reward: "750 EDU",
+      progress: 30,
+      requirements: [
+        { task: "Literature Review", isCompleted: true },
+        { task: "Problem Statement", isCompleted: false },
+        { task: "Methodology", isCompleted: false },
+        { task: "Expected Outcomes", isCompleted: false },
+      ],
     },
-  },
-];
-
-const completedMilestones = [
-  {
-    id: 3,
-    scholarshipId: 2,
-    scholarshipTitle: "Open Source Development",
-    sponsor: "GitFoundation",
-    milestone: {
-      title: "First Open Source Contribution",
-      description: "Make your first PR to a major open source project",
-      reward: 100,
+  ],
+  completedMilestones: [
+    {
+      id: 3,
+      scholarshipTitle: "Cloud Architecture",
+      sponsor: "CloudMasters",
+      milestone: "Cloud Fundamentals",
       completedDate: "2024-01-15",
-      status: "completed",
-      verificationHash: "0x123...abc",
+      reward: "400 EDU",
+      requirements: [
+        { task: "AWS Core Services", isCompleted: true },
+        { task: "Cloud Architecture Patterns", isCompleted: true },
+        { task: "Security Best Practices", isCompleted: true },
+        { task: "Cost Optimization", isCompleted: true },
+      ],
     },
-  },
-];
-
-const pendingVerification = [
-  {
-    id: 4,
-    scholarshipId: 1,
-    scholarshipTitle: "Cloud Computing Mastery",
-    sponsor: "CloudCorp",
-    milestone: {
-      title: "AWS Architecture Design",
-      description: "Design and document a scalable AWS architecture",
-      reward: 175,
-      submittedDate: "2024-02-01",
-      status: "pending",
-      proofHash: "0x456...def",
+    {
+      id: 4,
+      scholarshipTitle: "Web3 Development",
+      sponsor: "BlockchainCo",
+      milestone: "DApp Development",
+      completedDate: "2024-01-30",
+      reward: "500 EDU",
+      requirements: [
+        { task: "Frontend Integration", isCompleted: true },
+        { task: "Web3.js Implementation", isCompleted: true },
+        { task: "User Authentication", isCompleted: true },
+        { task: "Transaction Handling", isCompleted: true },
+      ],
     },
-  },
-];
+  ],
+  upcomingMilestones: [
+    {
+      id: 5,
+      scholarshipTitle: "Web3 Development",
+      sponsor: "BlockchainCo",
+      milestone: "Security & Testing",
+      startDate: "2024-03-15",
+      reward: "500 EDU",
+      requirements: [
+        "Smart Contract Auditing",
+        "Test Suite Development",
+        "Security Best Practices",
+        "Documentation",
+      ],
+    },
+    {
+      id: 6,
+      scholarshipTitle: "AI Research Program",
+      sponsor: "TechGiants",
+      milestone: "Model Development",
+      startDate: "2024-03-30",
+      reward: "750 EDU",
+      requirements: [
+        "Dataset Preparation",
+        "Model Architecture",
+        "Training Pipeline",
+        "Evaluation Metrics",
+      ],
+    },
+  ],
+};
 
 export default function MilestonesPage() {
+  const { address, provider } = useWallet();
+  const [scholarshipContract, setScholarshipContract] = useState(null);
+  const [realMilestones, setRealMilestones] = useState({
+    activeMilestones: [],
+    completedMilestones: [],
+    upcomingMilestones: [],
+    totalStaked: 0,
+  });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const initContract = async () => {
+      if (provider && address) {
+        const signer = await provider.getSigner();
+        const contract = new Contract(
+          scholarshipAddress,
+          ScholarshipABI,
+          signer
+        );
+        setScholarshipContract(contract);
+      }
+    };
+    initContract();
+  }, [provider, address]);
+
+  useEffect(() => {
+    const fetchScholarProgress = async () => {
+      if (!scholarshipContract || !address) return;
+
+      try {
+        // Get all scholarships the user is part of
+        const scholarships = [];
+        let counter = 0;
+        let hasMore = true;
+
+        while (hasMore) {
+          try {
+            const details = await scholarshipContract.getScholarshipDetails(
+              counter
+            );
+            if (details.selectedScholars.includes(address)) {
+              scholarships.push({ id: counter, ...details });
+            }
+            counter++;
+          } catch (error) {
+            hasMore = false;
+          }
+        }
+
+        // Fetch progress for each scholarship
+        const active = [];
+        const completed = [];
+        const upcoming = [];
+        let totalStakedAmount = 0n; // Using BigInt instead of BigNumber
+
+        for (const scholarship of scholarships) {
+          const [completedCount, totalMilestones, stakedAmount] =
+            await scholarshipContract.getScholarProgress(
+              scholarship.id,
+              address
+            );
+
+          totalStakedAmount += stakedAmount;
+
+          // Get all milestones
+          const milestones = [];
+          for (let i = 0; i < totalMilestones; i++) {
+            const milestone = await scholarshipContract.getMilestone(
+              scholarship.id,
+              i
+            );
+            milestones.push({
+              ...milestone,
+              id: i,
+              scholarshipId: scholarship.id,
+              scholarshipTitle: scholarship.title,
+              sponsor: scholarship.sponsor,
+            });
+          }
+
+          // Sort milestones into categories
+          milestones.forEach((milestone) => {
+            const milestoneData = {
+              id: `${scholarship.id}-${milestone.id}`,
+              scholarshipTitle: scholarship.title,
+              sponsor: scholarship.sponsor,
+              milestone: milestone.title,
+              reward: formatEther(milestone.reward) + " EDU",
+              requirements: milestone.description.split(","),
+              deadline: new Date(
+                Number(scholarship.deadline) * 1000
+              ).toISOString(),
+            };
+
+            if (milestone.isVerified) {
+              completed.push({
+                ...milestoneData,
+                completedDate: new Date().toISOString(),
+                requirements: milestone.description.split(",").map((req) => ({
+                  task: req.trim(),
+                  isCompleted: true,
+                })),
+              });
+            } else if (milestone.isCompleted) {
+              active.push({
+                ...milestoneData,
+                progress: 90,
+                requirements: milestone.description.split(",").map((req) => ({
+                  task: req.trim(),
+                  isCompleted: true,
+                })),
+              });
+            } else {
+              const progress =
+                (Number(completedCount) / Number(totalMilestones)) * 100;
+              if (progress > 0) {
+                active.push({
+                  ...milestoneData,
+                  progress: progress,
+                  requirements: milestone.description.split(",").map((req) => ({
+                    task: req.trim(),
+                    isCompleted: false,
+                  })),
+                });
+              } else {
+                upcoming.push({
+                  ...milestoneData,
+                  startDate: new Date(
+                    Number(scholarship.deadline) * 1000
+                  ).toISOString(),
+                  requirements: milestone.description.split(","),
+                });
+              }
+            }
+          });
+        }
+
+        setRealMilestones({
+          activeMilestones: active,
+          completedMilestones: completed,
+          upcomingMilestones: upcoming,
+          totalStaked: formatEther(totalStakedAmount),
+        });
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching scholar progress:", error);
+        setIsLoading(false);
+      }
+    };
+
+    fetchScholarProgress();
+  }, [scholarshipContract, address]);
+
+  // Combine real and dummy data, preferring real data when available
+  const displayData = {
+    activeMilestones: [
+      ...(realMilestones.activeMilestones.length > 0
+        ? realMilestones.activeMilestones
+        : userMilestones.activeMilestones),
+    ],
+    completedMilestones: [
+      ...(realMilestones.completedMilestones.length > 0
+        ? realMilestones.completedMilestones
+        : userMilestones.completedMilestones),
+    ],
+    upcomingMilestones: [
+      ...(realMilestones.upcomingMilestones.length > 0
+        ? realMilestones.upcomingMilestones
+        : userMilestones.upcomingMilestones),
+    ],
+  };
+
+  // Always show data (real or dummy) regardless of loading state
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Milestone Tracking</h1>
-        <p className="text-muted-foreground">
-          Track your progress and manage your scholarship milestones
-        </p>
-      </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto space-y-8 relative">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Your Milestones</h1>
+            <p className="text-muted-foreground">
+              Track your progress and achievements across all scholarships
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-primary" />
+              <span className="font-semibold">
+                {realMilestones.totalStaked || "2,150"} EDU
+              </span>
+              <span className="text-muted-foreground">
+                {realMilestones.totalStaked ? "staked" : "earned"}
+              </span>
+            </div>
+          </div>
+        </div>
 
-      <Tabs defaultValue="active" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="active" className="relative">
-            Active
-            <Badge
-              variant="secondary"
-              className="ml-2 absolute -top-2 -right-2"
-            >
-              {activeMilestones.length}
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger value="pending" className="relative">
-            Pending Verification
-            <Badge
-              variant="secondary"
-              className="ml-2 absolute -top-2 -right-2"
-            >
-              {pendingVerification.length}
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger value="completed" className="relative">
-            Completed
-            <Badge
-              variant="secondary"
-              className="ml-2 absolute -top-2 -right-2"
-            >
-              {completedMilestones.length}
-            </Badge>
-          </TabsTrigger>
-        </TabsList>
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Active Milestones
+              </CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {displayData.activeMilestones.length}
+              </div>
+              <p className="text-xs text-muted-foreground">in progress</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Completed</CardTitle>
+              <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {displayData.completedMilestones.length}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                milestones achieved
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Upcoming</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {displayData.upcomingMilestones.length}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                milestones pending
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Total Rewards
+              </CardTitle>
+              <Coins className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">2,150 EDU</div>
+              <p className="text-xs text-muted-foreground">earned so far</p>
+            </CardContent>
+          </Card>
+        </div>
 
-        <TabsContent value="active" className="space-y-4">
-          {activeMilestones.map((item) => (
-            <Card key={item.id}>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-xl">
-                      {item.milestone.title}
-                    </CardTitle>
-                    <CardDescription className="flex items-center gap-2 mt-1">
-                      <Trophy className="w-4 h-4" />
-                      {item.scholarshipTitle} by {item.sponsor}
-                    </CardDescription>
-                  </div>
-                  <Badge variant="secondary">{item.milestone.reward} EDU</Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {item.milestone.description}
-                </p>
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span>Progress</span>
-                    <span>{item.milestone.progress}%</span>
-                  </div>
-                  <Progress value={item.milestone.progress} />
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Clock className="w-4 h-4" />
-                      Deadline: {item.milestone.deadline}
+        {/* Milestones Tabs */}
+        <Tabs defaultValue="active" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="active">Active</TabsTrigger>
+            <TabsTrigger value="completed">Completed</TabsTrigger>
+            <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+          </TabsList>
+
+          {/* Active Milestones */}
+          <TabsContent value="active">
+            <div className="space-y-6 relative">
+              {displayData.activeMilestones.map((milestone) => (
+                <Card key={milestone.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle>{milestone.milestone}</CardTitle>
+                        <CardDescription>
+                          {milestone.scholarshipTitle} • Sponsored by{" "}
+                          {milestone.sponsor}
+                        </CardDescription>
+                      </div>
+                      <Badge variant="secondary">{milestone.reward}</Badge>
                     </div>
-                    <Button>Submit Proof</Button>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Progress</span>
+                        <span>{milestone.progress}%</span>
+                      </div>
+                      <Progress value={milestone.progress} />
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium">Requirements</h4>
+                      <div className="space-y-2">
+                        {milestone.requirements.map((req, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            {req.isCompleted ? (
+                              <CheckCircle className="w-4 h-4 text-primary" />
+                            ) : (
+                              <XCircle className="w-4 h-4 text-muted-foreground" />
+                            )}
+                            <span
+                              className={`text-sm ${
+                                req.isCompleted ? "" : "text-muted-foreground"
+                              }`}
+                            >
+                              {req.task}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Clock className="w-4 h-4" />
+                        <span>
+                          Due{" "}
+                          {new Date(milestone.deadline).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <Button disabled={isLoading}>Submit for Review</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {isLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/5 backdrop-blur-[1px] rounded-lg">
+                  <div className="bg-background/90 px-4 py-2 rounded-lg border flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    <span className="text-sm">Loading blockchain data...</span>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </TabsContent>
+              )}
+            </div>
+          </TabsContent>
 
-        <TabsContent value="pending" className="space-y-4">
-          {pendingVerification.map((item) => (
-            <Card key={item.id}>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-xl">
-                      {item.milestone.title}
-                    </CardTitle>
-                    <CardDescription className="flex items-center gap-2 mt-1">
-                      <Trophy className="w-4 h-4" />
-                      {item.scholarshipTitle} by {item.sponsor}
-                    </CardDescription>
+          {/* Completed Milestones */}
+          <TabsContent value="completed">
+            <div className="space-y-6 relative">
+              {displayData.completedMilestones.map((milestone) => (
+                <Card key={milestone.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle>{milestone.milestone}</CardTitle>
+                        <CardDescription>
+                          {milestone.scholarshipTitle} • Sponsored by{" "}
+                          {milestone.sponsor}
+                        </CardDescription>
+                      </div>
+                      <Badge variant="secondary">{milestone.reward}</Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium">
+                        Completed Requirements
+                      </h4>
+                      <div className="space-y-2">
+                        {milestone.requirements.map((req, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4 text-primary" />
+                            <span className="text-sm">{req.task}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <GraduationCap className="w-4 h-4" />
+                        <span>
+                          Completed on{" "}
+                          {new Date(
+                            milestone.completedDate
+                          ).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <Button variant="outline">View Certificate</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {isLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/5 backdrop-blur-[1px] rounded-lg">
+                  <div className="bg-background/90 px-4 py-2 rounded-lg border flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    <span className="text-sm">Loading blockchain data...</span>
                   </div>
-                  <Badge variant="secondary">{item.milestone.reward} EDU</Badge>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {item.milestone.description}
-                </p>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <FileCheck className="w-4 h-4" />
-                    Submitted: {item.milestone.submittedDate}
-                  </div>
-                  <Badge variant="outline">Pending Verification</Badge>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </TabsContent>
+              )}
+            </div>
+          </TabsContent>
 
-        <TabsContent value="completed" className="space-y-4">
-          {completedMilestones.map((item) => (
-            <Card key={item.id}>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-xl">
-                      {item.milestone.title}
-                    </CardTitle>
-                    <CardDescription className="flex items-center gap-2 mt-1">
-                      <Trophy className="w-4 h-4" />
-                      {item.scholarshipTitle} by {item.sponsor}
-                    </CardDescription>
+          {/* Upcoming Milestones */}
+          <TabsContent value="upcoming">
+            <div className="space-y-6 relative">
+              {displayData.upcomingMilestones.map((milestone) => (
+                <Card key={milestone.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle>{milestone.milestone}</CardTitle>
+                        <CardDescription>
+                          {milestone.scholarshipTitle} • Sponsored by{" "}
+                          {milestone.sponsor}
+                        </CardDescription>
+                      </div>
+                      <Badge variant="secondary">{milestone.reward}</Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium">Requirements</h4>
+                      <div className="space-y-2">
+                        {milestone.requirements.map((req, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <BookOpen className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">
+                              {req}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Clock className="w-4 h-4" />
+                        <span>
+                          Starts{" "}
+                          {new Date(milestone.startDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <Button variant="outline" disabled>
+                        Coming Soon
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {isLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/5 backdrop-blur-[1px] rounded-lg">
+                  <div className="bg-background/90 px-4 py-2 rounded-lg border flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    <span className="text-sm">Loading blockchain data...</span>
                   </div>
-                  <Badge variant="secondary">{item.milestone.reward} EDU</Badge>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {item.milestone.description}
-                </p>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    Completed: {item.milestone.completedDate}
-                  </div>
-                  <Button variant="outline" size="sm">
-                    View Certificate
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </TabsContent>
-      </Tabs>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }

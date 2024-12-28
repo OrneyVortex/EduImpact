@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -132,6 +133,52 @@ const courseModules = [
 ];
 
 export default function LearnPage() {
+  // Calculate initial completed lessons and progress
+  const [completedLessons, setCompletedLessons] = useState(() => {
+    // Get all initially completed lessons
+    const completed = new Set();
+    courseModules.forEach((module, moduleIndex) => {
+      module.lessons.forEach((lesson, lessonIndex) => {
+        if (lesson.isCompleted) {
+          // Use a unique identifier for each lesson
+          completed.add(`${moduleIndex}-${lessonIndex}`);
+        }
+      });
+    });
+    return completed;
+  });
+
+  // Calculate initial progress
+  const [courseProgress, setCourseProgress] = useState(() => {
+    const totalLessons = courseModules.reduce(
+      (total, module) => total + module.lessons.length,
+      0
+    );
+    return Math.round((completedLessons.size / totalLessons) * 100);
+  });
+
+  const handleLessonStart = (moduleIndex, lessonIndex) => {
+    const lessonKey = `${moduleIndex}-${lessonIndex}`;
+    if (!completedLessons.has(lessonKey)) {
+      const newCompletedLessons = new Set(completedLessons);
+      newCompletedLessons.add(lessonKey);
+      setCompletedLessons(newCompletedLessons);
+
+      // Calculate total lessons
+      const totalLessons = courseModules.reduce(
+        (total, module) => total + module.lessons.length,
+        0
+      );
+
+      // Calculate new progress
+      const newProgress = Math.min(
+        100,
+        Math.round((newCompletedLessons.size / totalLessons) * 100)
+      );
+      setCourseProgress(newProgress);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -158,8 +205,10 @@ export default function LearnPage() {
             </div>
           </div>
           <div className="flex flex-col gap-4">
-            <Progress value={20} className="w-[200px]" />
-            <span className="text-sm text-muted-foreground">20% Complete</span>
+            <Progress value={courseProgress} className="w-[200px]" />
+            <span className="text-sm text-muted-foreground">
+              {courseProgress}% Complete
+            </span>
           </div>
         </div>
 
@@ -180,7 +229,7 @@ export default function LearnPage() {
                     }`}
                   >
                     <div className="flex items-center gap-4">
-                      {lesson.isCompleted ? (
+                      {completedLessons.has(`${moduleIndex}-${lessonIndex}`) ? (
                         <CheckCircle2 className="w-5 h-5 text-primary" />
                       ) : lesson.isLocked ? (
                         <Lock className="w-5 h-5" />
@@ -200,9 +249,18 @@ export default function LearnPage() {
                     </div>
                     {!lesson.isLocked && (
                       <Button
-                        variant={lesson.isCompleted ? "outline" : "default"}
+                        variant={
+                          completedLessons.has(`${moduleIndex}-${lessonIndex}`)
+                            ? "outline"
+                            : "default"
+                        }
+                        onClick={() =>
+                          handleLessonStart(moduleIndex, lessonIndex)
+                        }
                       >
-                        {lesson.isCompleted ? "Review" : "Start"}
+                        {completedLessons.has(`${moduleIndex}-${lessonIndex}`)
+                          ? "Review"
+                          : "Start"}
                       </Button>
                     )}
                   </div>

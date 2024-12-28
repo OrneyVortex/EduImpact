@@ -29,6 +29,7 @@ import {
   GraduationCap,
   Sparkles,
   Lightbulb,
+  Target,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -42,6 +43,7 @@ export default function Header() {
     { name: "Explore", href: "/explore", icon: Book },
     { name: "Scholarships", href: "/scholarships", icon: Trophy },
     { name: "Learn", href: "/learn", icon: GraduationCap },
+    { name: "Milestones", href: "/milestones", icon: Target },
   ];
 
   return (

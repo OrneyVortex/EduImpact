@@ -2,19 +2,6 @@
 	{
 		"inputs": [
 			{
-				"internalType": "uint256",
-				"name": "scholarshipId",
-				"type": "uint256"
-			}
-		],
-		"name": "applyForScholarship",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
 				"internalType": "address",
 				"name": "_openCampusIDContract",
 				"type": "address"
@@ -57,12 +44,44 @@
 			{
 				"indexed": true,
 				"internalType": "address",
+				"name": "scholar",
+				"type": "address"
+			}
+		],
+		"name": "AllMilestonesCompleted",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "scholarshipId",
+				"type": "uint256"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
 				"name": "applicant",
 				"type": "address"
 			}
 		],
 		"name": "ApplicationSubmitted",
 		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "scholarshipId",
+				"type": "uint256"
+			}
+		],
+		"name": "applyForScholarship",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
 	},
 	{
 		"inputs": [
@@ -222,6 +241,31 @@
 			}
 		],
 		"name": "RewardReleased",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "scholarshipId",
+				"type": "uint256"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "scholar",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "RewardStaked",
 		"type": "event"
 	},
 	{
@@ -499,6 +543,40 @@
 				"internalType": "uint256",
 				"name": "scholarshipId",
 				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "scholar",
+				"type": "address"
+			}
+		],
+		"name": "getScholarProgress",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "completedMilestones_",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "totalMilestones",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "stakedAmount",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "scholarshipId",
+				"type": "uint256"
 			}
 		],
 		"name": "getScholarshipDetails",
@@ -562,6 +640,30 @@
 				"internalType": "address[]",
 				"name": "selectedScholars",
 				"type": "address[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "scholarshipId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "scholar",
+				"type": "address"
+			}
+		],
+		"name": "getStakedAmount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -734,6 +836,30 @@
 	{
 		"inputs": [],
 		"name": "SELECTION_REWARD",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "stakedAmounts",
 		"outputs": [
 			{
 				"internalType": "uint256",

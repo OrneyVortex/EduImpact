@@ -55,6 +55,9 @@ contract ScholarshipManager is Ownable, ReentrancyGuard {
     mapping(uint256 => mapping(address => mapping(uint256 => bool))) public completedMilestones;
     mapping(uint256 => mapping(address => uint256)) public scholarProgress;
 
+    // New mapping to track staked amounts for each scholar in each scholarship
+    mapping(uint256 => mapping(address => uint256)) public stakedAmounts;
+
     event ScholarshipCreated(
         uint256 indexed scholarshipId, 
         address indexed sponsor, 
@@ -72,6 +75,8 @@ contract ScholarshipManager is Ownable, ReentrancyGuard {
     );
     event MilestoneVerified(uint256 indexed scholarshipId, address indexed scholar, uint256 milestoneId);
     event RewardReleased(uint256 indexed scholarshipId, address indexed scholar, uint256 amount);
+    event RewardStaked(uint256 indexed scholarshipId, address indexed scholar, uint256 amount);
+    event AllMilestonesCompleted(uint256 indexed scholarshipId, address indexed scholar);
 
     /**
      * @dev Constructor sets the OpenCampusID contract address
@@ -216,17 +221,69 @@ contract ScholarshipManager is Ownable, ReentrancyGuard {
         scholarProgress[scholarshipId][scholar]++;
 
         // Update scholar's reputation
-        openCampusID.updateReputation(scholar, 5); // Reward for completing milestone
+        openCampusID.updateReputation(scholar, int256(MILESTONE_COMPLETION_REWARD));
 
-        // Release milestone reward in EDU
+        // Stake milestone reward instead of immediate transfer
         uint256 reward = milestone.reward;
         scholarship.remainingAmount -= reward;
+        stakedAmounts[scholarshipId][scholar] += reward;
         
-        (bool success, ) = payable(scholar).call{value: reward}("");
+        emit MilestoneVerified(scholarshipId, scholar, milestoneId);
+        emit RewardStaked(scholarshipId, scholar, reward);
+
+        // Check if all milestones are completed
+        if (scholarProgress[scholarshipId][scholar] == scholarship.totalMilestones) {
+            emit AllMilestonesCompleted(scholarshipId, scholar);
+            _releaseStakedFunds(scholarshipId, scholar);
+        }
+    }
+
+    /**
+     * @dev Get the total staked amount for a scholar in a scholarship
+     * @param scholarshipId The ID of the scholarship
+     * @param scholar The address of the scholar
+     * @return The total staked amount
+     */
+    function getStakedAmount(uint256 scholarshipId, address scholar) external view returns (uint256) {
+        return stakedAmounts[scholarshipId][scholar];
+    }
+
+    /**
+     * @dev Internal function to release all staked funds to a scholar
+     * @param scholarshipId The ID of the scholarship
+     * @param scholar The address of the scholar
+     */
+    function _releaseStakedFunds(uint256 scholarshipId, address scholar) internal {
+        uint256 totalStaked = stakedAmounts[scholarshipId][scholar];
+        require(totalStaked > 0, "No staked amount");
+
+        stakedAmounts[scholarshipId][scholar] = 0;
+        
+        (bool success, ) = payable(scholar).call{value: totalStaked}("");
         require(success, "EDU transfer failed");
 
-        emit MilestoneVerified(scholarshipId, scholar, milestoneId);
-        emit RewardReleased(scholarshipId, scholar, reward);
+        emit RewardReleased(scholarshipId, scholar, totalStaked);
+    }
+
+    /**
+     * @dev Get scholar's progress and staking details
+     * @param scholarshipId The ID of the scholarship
+     * @param scholar The address of the scholar
+     * @return completedMilestones_ Number of completed milestones
+     * @return totalMilestones Total number of milestones
+     * @return stakedAmount Current staked amount
+     */
+    function getScholarProgress(uint256 scholarshipId, address scholar) external view returns (
+        uint256 completedMilestones_,
+        uint256 totalMilestones,
+        uint256 stakedAmount
+    ) {
+        Scholarship storage scholarship = scholarships[scholarshipId];
+        return (
+            scholarProgress[scholarshipId][scholar],
+            scholarship.totalMilestones,
+            stakedAmounts[scholarshipId][scholar]
+        );
     }
 
     function isSelectedScholar(uint256 scholarshipId, address scholar) public view returns (bool) {

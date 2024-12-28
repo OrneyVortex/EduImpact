@@ -26,9 +26,54 @@ import {
   Trophy,
   Users,
 } from "lucide-react";
+import { useToast } from "../../hooks/use-toast";
+import { applyForScholarship } from "../../lib/contracts";
+import { useWallet } from "../../lib/WalletContext";
+import { useState } from "react";
+import SubmitMilestoneDialog from "./SubmitMilestoneDialog";
+import { ethers } from "ethers";
 
 export default function ApplyDialog({ scholarship, trigger }) {
+  const { toast } = useToast();
+  const { isConnected } = useWallet();
+  const [loading, setLoading] = useState(false);
+
   if (!scholarship) return null;
+
+  const handleApply = async () => {
+    if (!isConnected) {
+      toast({
+        title: "Error",
+        description: "Please connect your wallet first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const numericId = scholarship.id.replace(/^real-/, "");
+      const scholarshipId = ethers.getBigInt(numericId);
+
+      const tx = await applyForScholarship(scholarshipId);
+      console.log("Application submitted:", tx);
+
+      toast({
+        title: "Success",
+        description: "Your application has been submitted successfully!",
+      });
+    } catch (error) {
+      console.error("Error applying for scholarship:", error);
+      toast({
+        title: "Error",
+        description:
+          error.message || "Failed to apply for scholarship. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Dialog>
@@ -118,11 +163,17 @@ export default function ApplyDialog({ scholarship, trigger }) {
                       <p className="text-sm text-muted-foreground">
                         {milestone.description}
                       </p>
-                      <div className="flex items-center gap-2">
-                        <Coins className="w-4 h-4 text-primary" />
-                        <span className="text-sm font-medium">
-                          Reward: {milestone.reward} EDU
-                        </span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Coins className="w-4 h-4 text-primary" />
+                          <span className="text-sm font-medium">
+                            Reward: {milestone.reward} EDU
+                          </span>
+                        </div>
+                        <SubmitMilestoneDialog
+                          scholarship={scholarship}
+                          milestoneIndex={index}
+                        />
                       </div>
                     </div>
                   </AccordionContent>
@@ -132,8 +183,8 @@ export default function ApplyDialog({ scholarship, trigger }) {
           </div>
 
           <DialogFooter>
-            <Button className="w-full" onClick={() => {}}>
-              Apply for Scholarship
+            <Button className="w-full" onClick={handleApply} disabled={loading}>
+              {loading ? "Applying..." : "Apply for Scholarship"}
             </Button>
           </DialogFooter>
         </div>
