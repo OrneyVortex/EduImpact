@@ -207,109 +207,114 @@ export default function ScholarshipsPage() {
   ];
 
   return (
-    <div className="space-y-8">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Available Scholarships</h1>
-        <p className="text-muted-foreground">
-          Discover and apply for tech-focused scholarships from leading
-          companies
-        </p>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4">
-        <Input placeholder="Search scholarships..." className="md:w-[300px]" />
-        <Select defaultValue="All Categories">
-          <SelectTrigger className="md:w-[200px]">
-            <SelectValue placeholder="Select category" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map((category) => (
-              <SelectItem key={category} value={category}>
-                {category}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select defaultValue="newest">
-          <SelectTrigger className="md:w-[200px]">
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="newest">Newest First</SelectItem>
-            <SelectItem value="amount">Highest Amount</SelectItem>
-            <SelectItem value="deadline">Deadline</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Loading State */}
-      {loading && (
-        <div className="text-center py-8">
-          <p className="text-muted-foreground">Loading scholarships...</p>
-        </div>
-      )}
-
-      {/* No Scholarships State */}
-      {!loading && allScholarships.length === 0 && (
-        <div className="text-center py-8">
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Page Header */}
+        <div className="text-center">
+          <h1 className="text-3xl font-bold mb-2">Available Scholarships</h1>
           <p className="text-muted-foreground">
-            No scholarships available at the moment.
+            Discover and apply for tech-focused scholarships from leading
+            companies
           </p>
         </div>
-      )}
 
-      {/* Scholarships Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {allScholarships.map((scholarship) => (
-          <Card key={scholarship.id}>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <CardTitle className="text-xl">{scholarship.title}</CardTitle>
-                <Badge variant="secondary">{scholarship.category}</Badge>
-              </div>
-              <CardDescription className="flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                {scholarship.sponsor?.slice(0, 6)}...
-                {scholarship.sponsor?.slice(-4) || scholarship.sponsor}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                {scholarship.description}
-              </p>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {scholarship.skills?.map((skill) => (
-                  <Badge key={skill} variant="outline">
-                    {skill}
-                  </Badge>
-                ))}
-              </div>
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-1">
-                  <Coins className="w-4 h-4 text-primary" />
-                  <span className="font-semibold">
-                    {scholarship.amount} EDU
-                  </span>
+        {/* Filters */}
+        <div className="flex flex-col md:flex-row gap-4 justify-center">
+          <Input
+            placeholder="Search scholarships..."
+            className="md:w-[300px]"
+          />
+          <Select defaultValue="All Categories">
+            <SelectTrigger className="md:w-[200px]">
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select defaultValue="newest">
+            <SelectTrigger className="md:w-[200px]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest First</SelectItem>
+              <SelectItem value="amount">Highest Amount</SelectItem>
+              <SelectItem value="deadline">Deadline</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">Loading scholarships...</p>
+          </div>
+        )}
+
+        {/* No Scholarships State */}
+        {!loading && allScholarships.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">
+              No scholarships available at the moment.
+            </p>
+          </div>
+        )}
+
+        {/* Scholarships Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {allScholarships.map((scholarship) => (
+            <Card key={scholarship.id}>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <CardTitle className="text-xl">{scholarship.title}</CardTitle>
+                  <Badge variant="secondary">{scholarship.category}</Badge>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Trophy className="w-4 h-4 text-primary" />
-                  <span>{scholarship.totalMilestones} Milestones</span>
+                <CardDescription className="flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  {scholarship.sponsor?.slice(0, 6)}...
+                  {scholarship.sponsor?.slice(-4) || scholarship.sponsor}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {scholarship.description}
+                </p>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {scholarship.skills?.map((skill) => (
+                    <Badge key={skill} variant="outline">
+                      {skill}
+                    </Badge>
+                  ))}
                 </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between items-center">
-              <p className="text-sm text-muted-foreground">
-                Deadline:{" "}
-                {scholarship.deadline instanceof Date
-                  ? scholarship.deadline.toLocaleDateString()
-                  : new Date(scholarship.deadline).toLocaleDateString()}
-              </p>
-              <ApplyDialog scholarship={scholarship} />
-            </CardFooter>
-          </Card>
-        ))}
+                <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-1">
+                    <Coins className="w-4 h-4 text-primary" />
+                    <span className="font-semibold">
+                      {scholarship.amount} EDU
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Trophy className="w-4 h-4 text-primary" />
+                    <span>{scholarship.totalMilestones} Milestones</span>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-between items-center">
+                <p className="text-sm text-muted-foreground">
+                  Deadline:{" "}
+                  {scholarship.deadline instanceof Date
+                    ? scholarship.deadline.toLocaleDateString()
+                    : new Date(scholarship.deadline).toLocaleDateString()}
+                </p>
+                <ApplyDialog scholarship={scholarship} />
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   );
