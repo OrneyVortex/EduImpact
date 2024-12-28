@@ -40,7 +40,11 @@ const milestoneSchema = z.object({
   ),
 });
 
-export default function MilestoneForm({ onSubmit, initialData = [] }) {
+export default function MilestoneForm({
+  onSubmit,
+  isLoading = false,
+  initialData = [],
+}) {
   const form = useForm({
     resolver: zodResolver(milestoneSchema),
     defaultValues: {
@@ -82,6 +86,7 @@ export default function MilestoneForm({ onSubmit, initialData = [] }) {
                     variant="ghost"
                     size="icon"
                     onClick={() => remove(index)}
+                    disabled={isLoading}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -99,6 +104,7 @@ export default function MilestoneForm({ onSubmit, initialData = [] }) {
                         <Input
                           placeholder="e.g. Deploy Cloud Infrastructure"
                           {...field}
+                          disabled={isLoading}
                         />
                       </FormControl>
                       <FormDescription>
@@ -116,7 +122,12 @@ export default function MilestoneForm({ onSubmit, initialData = [] }) {
                     <FormItem>
                       <FormLabel>Reward (EDU)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="100" {...field} />
+                        <Input
+                          type="number"
+                          placeholder="100"
+                          {...field}
+                          disabled={isLoading}
+                        />
                       </FormControl>
                       <FormDescription>
                         EDU tokens awarded for completing this milestone.
@@ -136,6 +147,7 @@ export default function MilestoneForm({ onSubmit, initialData = [] }) {
                         <Textarea
                           placeholder="Describe what needs to be accomplished in this milestone..."
                           {...field}
+                          disabled={isLoading}
                         />
                       </FormControl>
                       <FormDescription>
@@ -153,7 +165,7 @@ export default function MilestoneForm({ onSubmit, initialData = [] }) {
                     <FormItem>
                       <FormLabel>Deadline</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} />
+                        <Input type="date" {...field} disabled={isLoading} />
                       </FormControl>
                       <FormDescription>
                         Target date for milestone completion.
@@ -173,6 +185,7 @@ export default function MilestoneForm({ onSubmit, initialData = [] }) {
                         <Textarea
                           placeholder="List the required evidence to verify completion..."
                           {...field}
+                          disabled={isLoading}
                         />
                       </FormControl>
                       <FormDescription>
@@ -200,12 +213,15 @@ export default function MilestoneForm({ onSubmit, initialData = [] }) {
                 proofRequirements: "",
               })
             }
+            disabled={isLoading}
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Milestone
           </Button>
 
-          <Button type="submit">Save Milestones</Button>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? "Creating Scholarship..." : "Save Milestones"}
+          </Button>
         </div>
       </form>
     </Form>

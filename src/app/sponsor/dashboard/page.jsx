@@ -1,276 +1,418 @@
 "use client";
 
-import { Button } from "../../../components/ui/button";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../../../components/ui/card";
-import { Badge } from "../../../components/ui/badge";
-import { Progress } from "../../../components/ui/progress";
+} from "@/components/ui/card";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "../../../components/ui/tabs";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { useWallet } from "@/lib/WalletContext";
 import {
-  BarChart3,
-  BookOpen,
-  CheckCircle2,
-  Clock,
-  FileCheck,
-  GraduationCap,
-  Users,
-  Wallet,
-} from "lucide-react";
-
-// Mock sponsor data
-const sponsorData = {
-  name: "CloudCorp",
-  totalSponsored: 2000,
-  totalScholars: 12,
-  verificationsPending: 4,
-  stats: {
-    completionRate: 85,
-    averageProgress: 72,
-    totalMilestones: 45,
-    completedMilestones: 38,
-  },
-  activeScholarships: [
-    {
-      id: 1,
-      title: "Cloud Computing Mastery",
-      totalAmount: 500,
-      remainingAmount: 200,
-      scholars: 5,
-      milestones: {
-        total: 15,
-        completed: 12,
-        pending: 2,
-      },
-    },
-    {
-      id: 2,
-      title: "DevOps Engineering",
-      totalAmount: 750,
-      remainingAmount: 500,
-      scholars: 4,
-      milestones: {
-        total: 18,
-        completed: 8,
-        pending: 1,
-      },
-    },
-    {
-      id: 3,
-      title: "AWS Architecture",
-      totalAmount: 750,
-      remainingAmount: 600,
-      scholars: 3,
-      milestones: {
-        total: 12,
-        completed: 3,
-        pending: 1,
-      },
-    },
-  ],
-  pendingVerifications: [
-    {
-      id: 1,
-      scholarshipTitle: "Cloud Computing Mastery",
-      scholar: "Alice Johnson",
-      milestone: "Deploy Scalable Architecture",
-      submittedDate: "2024-02-15",
-      proofHash: "0x123...abc",
-    },
-    {
-      id: 2,
-      scholarshipTitle: "DevOps Engineering",
-      scholar: "Bob Smith",
-      milestone: "CI/CD Pipeline Implementation",
-      submittedDate: "2024-02-14",
-      proofHash: "0x456...def",
-    },
-  ],
-};
+  getScholarshipDetails,
+  getMilestone,
+  verifyMilestone,
+} from "@/lib/contracts";
+import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FileCheck, Clock } from "lucide-react";
 
 export default function SponsorDashboard() {
+  const [scholarships, setScholarships] = useState([]);
+  const [pendingMilestones, setPendingMilestones] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMilestones, setLoadingMilestones] = useState(false);
+  const [verifyingMilestone, setVerifyingMilestone] = useState(null);
+  const { address, isConnected } = useWallet();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (isConnected && address) {
+      loadScholarships();
+    }
+  }, [isConnected, address]);
+
+  const loadScholarships = async () => {
+    try {
+      setLoading(true);
+      console.log("Loading scholarships for address:", address);
+
+      // Try to fetch first 10 scholarships
+      const scholarshipPromises = Array.from({ length: 10 }, async (_, id) => {
+        try {
+          const details = await getScholarshipDetails(id);
+          console.log(`Scholarship ${id} details:`, details);
+          return details;
+        } catch (error) {
+          console.error(`Error fetching scholarship ${id}:`, error);
+          return null;
+        }
+      });
+
+      const scholarshipDetails = (
+        await Promise.all(scholarshipPromises)
+      ).filter(
+        (scholarship) =>
+          scholarship !== null &&
+          scholarship.sponsor?.toLowerCase() === address?.toLowerCase()
+      );
+
+      console.log("All scholarships:", scholarshipDetails);
+
+      setScholarships(scholarshipDetails);
+      await loadPendingMilestones(scholarshipDetails);
+    } catch (error) {
+      console.error("Error in loadScholarships:", error);
+      toast({
+        title: "Error Loading Scholarships",
+        description:
+          error.message || "Failed to load scholarships. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadPendingMilestones = async (scholarshipsList) => {
+    try {
+      setLoadingMilestones(true);
+      console.log(
+        "Loading pending milestones for scholarships:",
+        scholarshipsList
+      );
+
+      const allPendingMilestones = [];
+
+      for (const scholarship of scholarshipsList) {
+        if (!scholarship) continue;
+
+        console.log(`Checking milestones for scholarship ${scholarship.id}`);
+        console.log("Total milestones:", scholarship.totalMilestones);
+
+        // For each scholarship, check all milestones up to totalMilestones
+        for (let i = 0; i < scholarship.totalMilestones; i++) {
+          try {
+            console.log(
+              `Fetching milestone ${i} for scholarship ${scholarship.id}`
+            );
+            const milestone = await getMilestone(scholarship.id, i);
+            console.log(`Milestone ${i} details:`, milestone);
+
+            if (!milestone.isVerified && milestone.proofIpfsHash) {
+              console.log(`Found pending milestone:`, {
+                scholarshipId: scholarship.id,
+                milestoneId: i,
+                milestone,
+              });
+
+              allPendingMilestones.push({
+                scholarshipId: scholarship.id,
+                scholarshipTitle: scholarship.title,
+                milestoneId: i,
+                ...milestone,
+              });
+            }
+          } catch (error) {
+            console.error(
+              `Error fetching milestone ${i} for scholarship ${scholarship.id}:`,
+              error
+            );
+          }
+        }
+      }
+
+      console.log("All pending milestones:", allPendingMilestones);
+      setPendingMilestones(allPendingMilestones);
+    } catch (error) {
+      console.error("Error in loadPendingMilestones:", error);
+      toast({
+        title: "Error Loading Milestones",
+        description:
+          error.message ||
+          "Failed to load milestone details. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingMilestones(false);
+    }
+  };
+
+  const handleVerifyMilestone = async (
+    scholarshipId,
+    milestoneId,
+    scholarAddress
+  ) => {
+    try {
+      setVerifyingMilestone(`${scholarshipId}-${milestoneId}`);
+      console.log("Verifying milestone with params:", {
+        scholarshipId,
+        milestoneId,
+        scholarAddress,
+      });
+
+      const tx = await verifyMilestone(
+        scholarshipId,
+        milestoneId,
+        scholarAddress
+      );
+      console.log("Verification transaction:", tx);
+
+      toast({
+        title: "Success",
+        description: "Milestone verified successfully!",
+      });
+
+      // Reload scholarships and milestones to reflect changes
+      await loadScholarships();
+    } catch (error) {
+      console.error("Error in handleVerifyMilestone:", error);
+      toast({
+        title: "Verification Failed",
+        description:
+          error.message || "Failed to verify milestone. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setVerifyingMilestone(null);
+    }
+  };
+
+  const handleContinueToMilestones = (scholarshipId) => {
+    try {
+      console.log("Button clicked! ScholarshipId:", scholarshipId);
+      console.log("Current URL:", window.location.href);
+      console.log("Attempting to navigate to:", `/sponsor/create/milestones`);
+
+      // Navigate to the create milestones page
+      window.location.href = `/sponsor/create/milestones`;
+
+      console.log("Navigation initiated");
+    } catch (error) {
+      console.error("Error details:", {
+        message: error.message,
+        stack: error.stack,
+        scholarshipId,
+      });
+      toast({
+        title: "Navigation Error",
+        description:
+          "Failed to navigate to milestone creation. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (!isConnected) {
+    return (
+      <div className="flex items-center justify-center h-[50vh]">
+        <Card>
+          <CardHeader>
+            <CardTitle>Connect Wallet</CardTitle>
+            <CardDescription>
+              Please connect your wallet to view your sponsored scholarships.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[50vh]">
+        <p>Loading scholarships...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-8">
-      {/* Dashboard Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Sponsor Dashboard</h1>
-          <p className="text-muted-foreground">
-            Manage your scholarships and track scholar progress
-          </p>
-        </div>
-        <Button>Create New Scholarship</Button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold tracking-tight">Sponsor Dashboard</h2>
+        <Button variant="default" asChild>
+          <a href="/sponsor/create">Create Scholarship</a>
+        </Button>
       </div>
 
-      {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Sponsored
-            </CardTitle>
-            <Wallet className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {sponsorData.totalSponsored} EDU
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Across {sponsorData.activeScholarships.length} scholarships
-            </p>
-          </CardContent>
-        </Card>
+      <Tabs defaultValue="scholarships">
+        <TabsList>
+          <TabsTrigger value="scholarships">Scholarships</TabsTrigger>
+          <TabsTrigger value="milestones">
+            Pending Milestones{" "}
+            {pendingMilestones.length > 0 && `(${pendingMilestones.length})`}
+          </TabsTrigger>
+        </TabsList>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Active Scholars
-            </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {sponsorData.totalScholars}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Currently enrolled scholars
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Completion Rate
-            </CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {sponsorData.stats.completionRate}%
-            </div>
-            <Progress
-              value={sponsorData.stats.completionRate}
-              className="mt-2"
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Pending Verifications
-            </CardTitle>
-            <FileCheck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {sponsorData.verificationsPending}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Milestones awaiting review
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Active Scholarships */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BookOpen className="w-5 h-5" />
-            Active Scholarships
-          </CardTitle>
-          <CardDescription>
-            Overview of your currently active scholarship programs
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            {sponsorData.activeScholarships.map((scholarship) => (
-              <div
-                key={scholarship.id}
-                className="flex flex-col md:flex-row md:items-center justify-between border rounded-lg p-4 space-y-4 md:space-y-0"
-              >
-                <div>
-                  <h3 className="font-medium">{scholarship.title}</h3>
-                  <div className="flex items-center gap-4 mt-2">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Users className="w-4 h-4" />
-                      {scholarship.scholars} Scholars
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <CheckCircle2 className="w-4 h-4" />
-                      {scholarship.milestones.completed} /{" "}
-                      {scholarship.milestones.total} Milestones
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-2 text-right">
-                  <Badge variant="secondary">
-                    {scholarship.remainingAmount} EDU remaining
-                  </Badge>
-                  <div className="flex items-center gap-4">
-                    <Button variant="outline" size="sm">
-                      View Details
-                    </Button>
-                    <Button size="sm">Verify Milestones</Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Pending Verifications */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileCheck className="w-5 h-5" />
-            Pending Verifications
-          </CardTitle>
-          <CardDescription>
-            Milestone submissions awaiting your verification
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {sponsorData.pendingVerifications.map((verification) => (
-              <div
-                key={verification.id}
-                className="flex flex-col md:flex-row md:items-center justify-between border rounded-lg p-4 space-y-4 md:space-y-0"
-              >
-                <div>
-                  <h3 className="font-medium">{verification.milestone}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {verification.scholarshipTitle} - {verification.scholar}
+        <TabsContent value="scholarships">
+          <Card>
+            <CardHeader>
+              <CardTitle>Your Scholarships</CardTitle>
+              <CardDescription>
+                Manage your sponsored scholarships and track scholar progress.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {scholarships.length === 0 ? (
+                <div className="text-center py-6">
+                  <p className="text-muted-foreground">
+                    You haven't created any scholarships yet.
                   </p>
-                  <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-                    <Clock className="w-4 h-4" />
-                    Submitted: {verification.submittedDate}
-                  </div>
                 </div>
-                <div className="space-x-2">
-                  <Button variant="outline" size="sm">
-                    View Proof
-                  </Button>
-                  <Button size="sm">Verify</Button>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Total Amount</TableHead>
+                      <TableHead>Remaining</TableHead>
+                      <TableHead>Deadline</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {scholarships.map((scholarship) => (
+                      <TableRow key={scholarship.id}>
+                        <TableCell className="font-medium">
+                          {scholarship.title}
+                        </TableCell>
+                        <TableCell>{scholarship.category}</TableCell>
+                        <TableCell>{scholarship.totalAmount} EDU</TableCell>
+                        <TableCell>{scholarship.remainingAmount} EDU</TableCell>
+                        <TableCell>
+                          {new Date(scholarship.deadline).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              scholarship.isActive ? "default" : "secondary"
+                            }
+                          >
+                            {scholarship.isActive ? "Active" : "Completed"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-x-2">
+                            <Button variant="outline" size="sm" asChild>
+                              <a
+                                href={`/sponsor/scholarships/${scholarship.id}`}
+                              >
+                                View Details
+                              </a>
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                console.log(
+                                  "Button clicked, preventing default"
+                                );
+                                handleContinueToMilestones(scholarship.id);
+                              }}
+                            >
+                              Continue to Milestones
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="milestones">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileCheck className="w-5 h-5" />
+                Pending Verifications
+              </CardTitle>
+              <CardDescription>
+                Milestone submissions awaiting your verification
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {pendingMilestones.length === 0 ? (
+                <div className="text-center py-6">
+                  <p className="text-muted-foreground">
+                    No pending milestone verifications.
+                  </p>
                 </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ) : (
+                <div className="space-y-4">
+                  {pendingMilestones.map((milestone) => (
+                    <div
+                      key={`${milestone.scholarshipId}-${milestone.milestoneId}`}
+                      className="flex flex-col md:flex-row md:items-center justify-between border rounded-lg p-4 space-y-4 md:space-y-0"
+                    >
+                      <div>
+                        <h3 className="font-medium">{milestone.title}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {milestone.scholarshipTitle} - Milestone{" "}
+                          {milestone.milestoneId + 1}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+                          <Clock className="w-4 h-4" />
+                          Reward: {milestone.reward} EDU
+                        </div>
+                      </div>
+                      <div className="space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            window.open(
+                              `https://ipfs.io/ipfs/${milestone.proofIpfsHash}`,
+                              "_blank"
+                            )
+                          }
+                        >
+                          View Proof
+                        </Button>
+                        <Button
+                          size="sm"
+                          disabled={
+                            verifyingMilestone ===
+                            `${milestone.scholarshipId}-${milestone.milestoneId}`
+                          }
+                          onClick={() =>
+                            handleVerifyMilestone(
+                              milestone.scholarshipId,
+                              milestone.milestoneId,
+                              milestone.scholarAddress
+                            )
+                          }
+                        >
+                          {verifyingMilestone ===
+                          `${milestone.scholarshipId}-${milestone.milestoneId}`
+                            ? "Verifying..."
+                            : "Verify"}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

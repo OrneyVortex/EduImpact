@@ -1,8 +1,6 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { WalletProvider } from "@/lib/WalletContext";
-import { Toaster } from "@/components/ui/toaster";
-import Header from "@/components/Header";
+import ClientLayout from "../components/ClientLayout";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -14,17 +12,9 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <WalletProvider>
-          <div className="relative min-h-screen flex flex-col">
-            <Header />
-            <main className="flex-1">
-              <div className="container py-6">{children}</div>
-            </main>
-          </div>
-          <Toaster />
-        </WalletProvider>
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   );

@@ -1,313 +1,285 @@
 "use client";
 
 import { useState } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { Button } from "../../../components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../../../components/ui/form";
-import { Input } from "../../../components/ui/input";
-import { Textarea } from "../../../components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../../components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
-import { ArrowLeft, Check } from "lucide-react";
-import Link from "next/link";
-import MilestoneForm from "../../../components/MilestoneForm";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs";
-
-const formSchema = z.object({
-  title: z.string().min(5, {
-    message: "Title must be at least 5 characters.",
-  }),
-  description: z.string().min(20, {
-    message: "Description must be at least 20 characters.",
-  }),
-  amount: z.string().refine((val) => !isNaN(val) && parseInt(val) > 0, {
-    message: "Amount must be a positive number.",
-  }),
-  category: z.string({
-    required_error: "Please select a category.",
-  }),
-  requiredSkills: z.string().min(1, {
-    message: "Required skills cannot be empty.",
-  }),
-  duration: z.string().refine((val) => !isNaN(val) && parseInt(val) > 0, {
-    message: "Duration must be a positive number.",
-  }),
-  maxParticipants: z
-    .string()
-    .refine((val) => !isNaN(val) && parseInt(val) > 0, {
-      message: "Max participants must be a positive number.",
-    }),
-});
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { createScholarship } from "@/lib/contracts";
 
 export default function CreateScholarship() {
-  const [activeTab, setActiveTab] = useState("details");
-  const [scholarshipDetails, setScholarshipDetails] = useState(null);
-  const [milestones, setMilestones] = useState([]);
-
-  const form = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      amount: "",
-      category: "",
-      requiredSkills: "",
-      duration: "",
-      maxParticipants: "",
-    },
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [scholarshipData, setScholarshipData] = useState({
+    title: "",
+    description: "",
+    category: "",
+    duration: "",
+    requiredSkills: "",
+    difficultyLevel: "",
   });
 
-  function onSubmitDetails(values) {
-    setScholarshipDetails(values);
-    setActiveTab("milestones");
-  }
+  const [milestones, setMilestones] = useState([
+    { title: "", description: "", reward: "" },
+  ]);
 
-  function onSubmitMilestones(milestoneData) {
-    setMilestones(milestoneData);
-    // TODO: Implement contract interaction with both scholarshipDetails and milestones
-    console.log("Scholarship Details:", scholarshipDetails);
-    console.log("Milestones:", milestoneData);
-  }
+  const handleScholarshipChange = (field, value) => {
+    setScholarshipData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleAddMilestone = () => {
+    setMilestones([...milestones, { title: "", description: "", reward: "" }]);
+  };
+
+  const handleMilestoneChange = (index, field, value) => {
+    const updatedMilestones = [...milestones];
+    updatedMilestones[index][field] = value;
+    setMilestones(updatedMilestones);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      console.log("Creating scholarship with data:", {
+        scholarshipData,
+        milestones,
+      });
+
+      // Validate all fields
+      if (
+        !scholarshipData.title ||
+        !scholarshipData.description ||
+        !scholarshipData.category ||
+        !scholarshipData.duration ||
+        !scholarshipData.requiredSkills ||
+        !scholarshipData.difficultyLevel
+      ) {
+        throw new Error("Please fill in all scholarship fields");
+      }
+
+      // Validate milestone data and convert rewards to numbers
+      const formattedMilestones = milestones.map((m, index) => {
+        if (!m.title || !m.description || !m.reward) {
+          throw new Error(
+            `Please fill in all fields for milestone ${index + 1}`
+          );
+        }
+
+        const reward = Number(m.reward);
+        if (isNaN(reward) || reward <= 0) {
+          throw new Error(
+            `Please enter a valid reward amount for milestone ${index + 1}`
+          );
+        }
+
+        return {
+          ...m,
+          reward: reward.toString(), // Convert to string for BigInt handling
+        };
+      });
+
+      // Calculate total reward
+      const totalReward = formattedMilestones.reduce(
+        (sum, m) => sum + Number(m.reward),
+        0
+      );
+      console.log("Total reward:", totalReward);
+
+      // Call createScholarship function with formatted data
+      const tx = await createScholarship(scholarshipData, formattedMilestones);
+      console.log("Transaction successful:", tx);
+
+      toast({
+        title: "Success",
+        description: "Scholarship created successfully!",
+      });
+
+      // Redirect to dashboard
+      window.location.href = "/sponsor/dashboard";
+    } catch (error) {
+      console.error("Error creating scholarship:", error);
+      toast({
+        title: "Error",
+        description:
+          error.message || "Failed to create scholarship. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/sponsor/dashboard">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-3xl font-bold">Create Scholarship</h1>
-          <p className="text-muted-foreground">
-            Set up a new scholarship program for tech learners
-          </p>
-        </div>
-      </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger
-            value="details"
-            disabled={activeTab === "milestones" && !scholarshipDetails}
-          >
-            <div className="flex items-center gap-2">
-              {scholarshipDetails && <Check className="w-4 h-4" />}
-              Scholarship Details
-            </div>
-          </TabsTrigger>
-          <TabsTrigger value="milestones" disabled={!scholarshipDetails}>
-            <div className="flex items-center gap-2">
-              {milestones.length > 0 && <Check className="w-4 h-4" />}
-              Define Milestones
-            </div>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="details">
-          <Card>
-            <CardHeader>
-              <CardTitle>Scholarship Details</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(onSubmitDetails)}
-                  className="space-y-8"
-                >
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Title</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="e.g. Cloud Computing Mastery"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          A clear and concise title for your scholarship
-                          program.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+    <div className="container mx-auto py-8">
+      <Card>
+        <CardHeader>
+          <CardTitle>Create Scholarship</CardTitle>
+          <CardDescription>
+            Create a new scholarship with milestones and rewards.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Scholarship Details */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Scholarship Details</h3>
+              <div className="grid gap-4">
+                <div>
+                  <Label htmlFor="title">Title</Label>
+                  <Input
+                    id="title"
+                    value={scholarshipData.title}
+                    onChange={(e) =>
+                      handleScholarshipChange("title", e.target.value)
+                    }
+                    placeholder="Enter scholarship title"
                   />
-
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Describe the scholarship program, its goals, and expectations..."
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Detailed information about the scholarship and what
-                          scholars will learn.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                </div>
+                <div>
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={scholarshipData.description}
+                    onChange={(e) =>
+                      handleScholarshipChange("description", e.target.value)
+                    }
+                    placeholder="Enter scholarship description"
                   />
+                </div>
+                <div>
+                  <Label htmlFor="category">Category</Label>
+                  <Input
+                    id="category"
+                    value={scholarshipData.category}
+                    onChange={(e) =>
+                      handleScholarshipChange("category", e.target.value)
+                    }
+                    placeholder="Enter category"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="duration">Duration (weeks)</Label>
+                  <Input
+                    id="duration"
+                    type="number"
+                    value={scholarshipData.duration}
+                    onChange={(e) =>
+                      handleScholarshipChange("duration", e.target.value)
+                    }
+                    placeholder="Enter duration in weeks"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="requiredSkills">Required Skills</Label>
+                  <Input
+                    id="requiredSkills"
+                    value={scholarshipData.requiredSkills}
+                    onChange={(e) =>
+                      handleScholarshipChange("requiredSkills", e.target.value)
+                    }
+                    placeholder="Enter required skills (comma separated)"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="difficultyLevel">
+                    Difficulty Level (1-5)
+                  </Label>
+                  <Input
+                    id="difficultyLevel"
+                    type="number"
+                    min="1"
+                    max="5"
+                    value={scholarshipData.difficultyLevel}
+                    onChange={(e) =>
+                      handleScholarshipChange("difficultyLevel", e.target.value)
+                    }
+                    placeholder="Enter difficulty level"
+                  />
+                </div>
+              </div>
+            </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="amount"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Total Amount (EDU)</FormLabel>
-                          <FormControl>
-                            <Input type="number" placeholder="500" {...field} />
-                          </FormControl>
-                          <FormDescription>
-                            Total EDU tokens allocated for this scholarship.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="category"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Category</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a category" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="cloud">
-                                Cloud Computing
-                              </SelectItem>
-                              <SelectItem value="blockchain">
-                                Blockchain
-                              </SelectItem>
-                              <SelectItem value="ai">
-                                Artificial Intelligence
-                              </SelectItem>
-                              <SelectItem value="devops">DevOps</SelectItem>
-                              <SelectItem value="security">
-                                Cybersecurity
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            The main focus area of the scholarship.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="requiredSkills"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Required Skills</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="e.g. JavaScript, Python, AWS basics"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Comma-separated list of prerequisite skills.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="duration"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Duration (weeks)</FormLabel>
-                          <FormControl>
-                            <Input type="number" placeholder="12" {...field} />
-                          </FormControl>
-                          <FormDescription>
-                            Expected time to complete all milestones.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="maxParticipants"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Maximum Participants</FormLabel>
-                          <FormControl>
-                            <Input type="number" placeholder="10" {...field} />
-                          </FormControl>
-                          <FormDescription>
-                            Maximum number of scholars that can enroll.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+            {/* Milestones */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Milestones</h3>
+              {milestones.map((milestone, index) => (
+                <div key={index} className="p-4 border rounded-lg space-y-4">
+                  <div className="text-sm font-medium">
+                    Milestone {index + 1}
                   </div>
-
-                  <div className="flex justify-end gap-4">
-                    <Button variant="outline" type="button">
-                      Save as Draft
-                    </Button>
-                    <Button type="submit">Continue to Milestones</Button>
+                  <div className="grid gap-4">
+                    <div>
+                      <Label htmlFor={`title-${index}`}>Title</Label>
+                      <Input
+                        id={`title-${index}`}
+                        value={milestone.title}
+                        onChange={(e) =>
+                          handleMilestoneChange(index, "title", e.target.value)
+                        }
+                        placeholder="Enter milestone title"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor={`description-${index}`}>
+                        Description
+                      </Label>
+                      <Textarea
+                        id={`description-${index}`}
+                        value={milestone.description}
+                        onChange={(e) =>
+                          handleMilestoneChange(
+                            index,
+                            "description",
+                            e.target.value
+                          )
+                        }
+                        placeholder="Enter milestone description"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor={`reward-${index}`}>Reward (EDU)</Label>
+                      <Input
+                        id={`reward-${index}`}
+                        type="number"
+                        value={milestone.reward}
+                        onChange={(e) =>
+                          handleMilestoneChange(index, "reward", e.target.value)
+                        }
+                        placeholder="Enter reward amount"
+                      />
+                    </div>
                   </div>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                </div>
+              ))}
 
-        <TabsContent value="milestones">
-          <Card>
-            <CardHeader>
-              <CardTitle>Define Milestones</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <MilestoneForm onSubmit={onSubmitMilestones} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleAddMilestone}
+              >
+                Add Another Milestone
+              </Button>
+            </div>
+
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? "Creating..." : "Create Scholarship"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

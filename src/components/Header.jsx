@@ -1,168 +1,151 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { useWallet } from "@/lib/WalletContext";
+import { Button } from "./ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
+} from "./ui/dropdown-menu";
+import { useWallet } from "../lib/WalletContext";
+import CreateProfile from "./CreateProfile";
 import {
-  BookOpen,
-  GraduationCap,
-  LayoutDashboard,
-  LogOut,
-  Menu,
-  Trophy,
+  ChevronDown,
   User,
   Wallet,
+  LogOut,
+  Book,
+  Trophy,
+  GraduationCap,
+  Sparkles,
+  Lightbulb,
 } from "lucide-react";
-
-const navigation = [
-  {
-    name: "Scholarships",
-    href: "/scholarships",
-    icon: BookOpen,
-  },
-  {
-    name: "Milestones",
-    href: "/milestones",
-    icon: Trophy,
-  },
-  {
-    name: "Learn",
-    href: "/learn",
-    icon: GraduationCap,
-  },
-];
-
-const sponsorNavigation = [
-  {
-    name: "Dashboard",
-    href: "/sponsor/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    name: "Create Scholarship",
-    href: "/sponsor/create",
-    icon: BookOpen,
-  },
-];
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function Header() {
-  const pathname = usePathname();
-  const { isConnected, address, connect, disconnect } = useWallet();
+  const { connect, disconnect, isConnected, address, hasProfile, profile } =
+    useWallet();
+  const router = useRouter();
 
-  const isSponsorRoute = pathname.startsWith("/sponsor");
-  const activeNavigation = isSponsorRoute ? sponsorNavigation : navigation;
+  const navigation = [
+    { name: "Explore", href: "/explore", icon: Book },
+    { name: "Scholarships", href: "/scholarships", icon: Trophy },
+    { name: "Learn", href: "/learn", icon: GraduationCap },
+  ];
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center">
-        <div className="mr-4 hidden md:flex">
-          <Link href="/" className="mr-6 flex items-center space-x-2">
-            <span className="hidden font-bold sm:inline-block">EduImpact</span>
+      <div className="container flex h-16 items-center justify-between">
+        <div className="flex items-center gap-6">
+          <Link href="/" className="flex items-center space-x-2">
+            <GraduationCap className="h-6 w-6" />
+            <span className="font-bold text-xl">EduImpact</span>
           </Link>
-          <nav className="flex items-center space-x-6 text-sm font-medium">
-            {activeNavigation.map((item) => (
+
+          <nav className="hidden md:flex items-center space-x-4">
+            {navigation.map((item) => (
               <Link
-                key={item.href}
+                key={item.name}
                 href={item.href}
-                className={cn(
-                  "transition-colors hover:text-foreground/80",
-                  pathname === item.href
-                    ? "text-foreground"
-                    : "text-foreground/60"
-                )}
+                className="flex items-center space-x-1 text-sm font-medium text-muted-foreground hover:text-primary"
               >
-                <div className="flex items-center gap-2">
-                  <item.icon className="h-4 w-4" />
-                  {item.name}
-                </div>
+                <item.icon className="h-4 w-4" />
+                <span>{item.name}</span>
               </Link>
             ))}
           </nav>
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild className="md:hidden">
-            <Button variant="ghost" size="icon">
-              <Menu className="h-5 w-5" />
+        <div className="flex items-center gap-4">
+          <Link href="/sponsor/dashboard">
+            <Button
+              variant="outline"
+              className="hidden sm:flex items-center gap-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+            >
+              <Sparkles className="h-4 w-4" />
+              Are you a Sponsor?
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-52">
-            {activeNavigation.map((item) => (
-              <DropdownMenuItem key={item.href} asChild>
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "flex items-center gap-2",
-                    pathname === item.href
-                      ? "text-foreground"
-                      : "text-foreground/60"
-                  )}
-                >
-                  <item.icon className="h-4 w-4" />
-                  {item.name}
-                </Link>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </Link>
 
-        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-          <nav className="flex items-center">
-            {isConnected ? (
+          {!isConnected ? (
+            <Button onClick={connect} className="flex items-center gap-2">
+              <Wallet className="h-4 w-4" />
+              Connect Wallet
+            </Button>
+          ) : !hasProfile ? (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Create Profile
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>OpenCampus ID Required</DialogTitle>
+                  <DialogDescription>
+                    You need an OpenCampus ID to use EduImpact
+                  </DialogDescription>
+                </DialogHeader>
+                <CreateProfile />
+              </DialogContent>
+            </Dialog>
+          ) : (
+            <div className="flex items-center gap-4">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-2">
+                  <Button variant="outline" className="flex items-center gap-2">
                     <User className="h-4 w-4" />
-                    <span className="hidden md:inline-block">
-                      {address.slice(0, 6)}...{address.slice(-4)}
+                    <span className="hidden sm:inline">
+                      {address?.slice(0, 6)}...{address?.slice(-4)}
                     </span>
+                    <ChevronDown className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link
-                      href="/profile"
-                      className="flex w-full items-center gap-2"
-                    >
-                      <User className="h-4 w-4" />
+                    <Link href="/profile" className="cursor-pointer">
+                      <User className="mr-2 h-4 w-4" />
                       Profile
                     </Link>
                   </DropdownMenuItem>
-                  {!isSponsorRoute && (
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/sponsor/dashboard"
-                        className="flex w-full items-center gap-2"
-                      >
-                        <LayoutDashboard className="h-4 w-4" />
-                        Sponsor Dashboard
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
+                  <DropdownMenuItem asChild>
+                    <Link href="/sponsor/dashboard" className="cursor-pointer">
+                      <Trophy className="mr-2 h-4 w-4" />
+                      Sponsor Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/scholar/dashboard" className="cursor-pointer">
+                      <Book className="mr-2 h-4 w-4" />
+                      Scholar Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    className="flex items-center gap-2 text-red-600"
                     onClick={disconnect}
+                    className="text-red-600 cursor-pointer"
                   >
-                    <LogOut className="h-4 w-4" />
+                    <LogOut className="mr-2 h-4 w-4" />
                     Disconnect
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            ) : (
-              <Button onClick={connect} size="sm" className="gap-2">
-                <Wallet className="h-4 w-4" />
-                Connect Wallet
-              </Button>
-            )}
-          </nav>
+            </div>
+          )}
         </div>
       </div>
     </header>
