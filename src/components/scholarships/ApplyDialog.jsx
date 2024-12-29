@@ -32,10 +32,12 @@ import { useWallet } from "../../lib/WalletContext";
 import { useState } from "react";
 import SubmitMilestoneDialog from "./SubmitMilestoneDialog";
 import { ethers } from "ethers";
+import { useOCAuth } from "@opencampus/ocid-connect-js";
 
 export default function ApplyDialog({ scholarship, trigger }) {
   const { toast } = useToast();
-  const { isConnected } = useWallet();
+  const { isConnected, connect, redirectToOCID, address } = useWallet();
+  const { isInitialized, authState } = useOCAuth();
   const [loading, setLoading] = useState(false);
 
   if (!scholarship) return null;
@@ -45,6 +47,28 @@ export default function ApplyDialog({ scholarship, trigger }) {
       toast({
         title: "Error",
         description: "Please connect your wallet first",
+        variant: "destructive",
+      });
+      await connect();
+      return;
+    }
+
+    // Check OCID authentication and wallet linking
+    if (!isInitialized || !authState?.isAuthenticated || !authState?.OCId) {
+      toast({
+        title: "OpenCampus ID Required",
+        description: "Please connect your OpenCampus ID to apply for scholarships.",
+        variant: "destructive",
+      });
+      await redirectToOCID();
+      return;
+    }
+
+    // Verify wallet address matches OCID
+    if (authState.ethAddress?.toLowerCase() !== address?.toLowerCase()) {
+      toast({
+        title: "Wallet Mismatch",
+        description: "Please use the wallet address linked to your OpenCampus ID.",
         variant: "destructive",
       });
       return;
@@ -64,12 +88,20 @@ export default function ApplyDialog({ scholarship, trigger }) {
       });
     } catch (error) {
       console.error("Error applying for scholarship:", error);
-      toast({
-        title: "Error",
-        description:
-          error.message || "Failed to apply for scholarship. Please try again.",
-        variant: "destructive",
-      });
+      if (error.reason?.includes("Active OpenCampusID required")) {
+        toast({
+          title: "OpenCampus ID Required",
+          description: "Please ensure your OpenCampus ID is active and properly linked to your wallet.",
+          variant: "destructive",
+        });
+        await redirectToOCID();
+      } else {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to apply for scholarship. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
