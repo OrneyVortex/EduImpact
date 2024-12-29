@@ -1,13 +1,9 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect } from "react";
-import {
-  connectWallet,
-  hasActiveProfile,
-  getProfile,
-  ocidAuth,
-} from "./contracts";
+import { connectWallet, hasActiveProfile, getProfile } from "./contracts";
 import { useToast } from "../hooks/use-toast";
+import { useOCAuth } from "@opencampus/ocid-connect-js";
 
 const WalletContext = createContext({
   isConnected: false,
@@ -28,12 +24,16 @@ export function WalletProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [hasProfile, setHasProfile] = useState(false);
   const { toast } = useToast();
+  const { ocAuth, isInitialized } = useOCAuth();
 
   const redirectToOCID = async () => {
     try {
-      await ocidAuth.signInWithRedirect({
+      if (!isInitialized) {
+        console.log("OCID not initialized yet");
+        return;
+      }
+      await ocAuth.signInWithRedirect({
         state: "eduimpact",
-        redirectUri: window.location.origin + "/redirect",
       });
     } catch (err) {
       console.error("Error redirecting to OCID:", err);
@@ -52,15 +52,17 @@ export function WalletProvider({ children }) {
       }
 
       // Check OCID auth state first
-      const authState = await ocidAuth.getAuthState();
-      if (authState.isAuthenticated) {
-        setProfile({
-          ocid: authState.OCId,
-          ethAddress: authState.ethAddress,
-          isActive: true,
-        });
-        setHasProfile(true);
-        return true;
+      if (isInitialized) {
+        const authState = await ocAuth.getAuthState();
+        if (authState.isAuthenticated) {
+          setProfile({
+            ocid: authState.OCId,
+            ethAddress: authState.ethAddress,
+            isActive: true,
+          });
+          setHasProfile(true);
+          return true;
+        }
       }
 
       // Fallback to contract check
@@ -98,9 +100,11 @@ export function WalletProvider({ children }) {
     // Check for OCID redirect response
     const checkOCIDRedirect = async () => {
       try {
-        const authState = await ocidAuth.handleLoginRedirect();
-        if (authState.isAuthenticated) {
-          await loadProfile(authState.ethAddress);
+        if (isInitialized) {
+          const authState = await ocAuth.handleLoginRedirect();
+          if (authState.isAuthenticated) {
+            await loadProfile(authState.ethAddress);
+          }
         }
       } catch (err) {
         console.error("Error handling OCID redirect:", err);
@@ -115,7 +119,7 @@ export function WalletProvider({ children }) {
       window.ethereum.removeListener("chainChanged", handleChainChanged);
       window.ethereum.removeListener("networkChanged", handleNetworkChanged);
     };
-  }, []);
+  }, [isInitialized]);
 
   const checkConnection = async () => {
     try {

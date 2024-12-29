@@ -1,6 +1,7 @@
 "use client";
 
 import { ThemeProvider } from "next-themes";
+import OCConnectWrapper from "../components/OCConnectWrapper";
 
 export function Providers({ children }) {
   return (
@@ -10,7 +11,7 @@ export function Providers({ children }) {
       enableSystem
       disableTransitionOnChange
     >
-      {children}
+      <OCConnectWrapper>{children}</OCConnectWrapper>
     </ThemeProvider>
   );
 }

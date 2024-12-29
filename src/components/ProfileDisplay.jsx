@@ -1,77 +1,76 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Badge } from "./ui/badge";
-import { Trophy, Award, Star, Coins } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Button } from "./ui/button";
+import { useWallet } from "../lib/WalletContext";
+import { Icons } from "./icons";
 
-export default function ProfileDisplay({ profile }) {
-  if (!profile) return null;
+export default function ProfileDisplay() {
+  const { profile, redirectToOCID } = useWallet();
+
+  if (!profile) {
+    return (
+      <div className="flex flex-col items-center justify-center p-6 bg-background border rounded-lg shadow-sm">
+        <h2 className="text-lg font-semibold mb-4">No Profile Found</h2>
+        <Button onClick={redirectToOCID}>
+          <Icons.ocid className="mr-2 h-4 w-4" />
+          Connect OpenCampus ID
+        </Button>
+      </div>
+    );
+  }
+
+  // Ensure profile data has default values
+  const displayName = profile.name || "Anonymous";
+  const skills = profile.skills || [];
+  const reputation = profile.reputation || 0;
+  const completedCourses = profile.completedCourses || 0;
+  const avatarUrl = profile.avatar || "";
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>{profile.ocid}</span>
-            <Badge variant={profile.isActive ? "default" : "secondary"}>
-              {profile.isActive ? "Active" : "Inactive"}
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center gap-2">
-              <Trophy className="h-4 w-4 text-primary" />
-              <div className="space-y-1">
-                <p className="text-sm font-medium leading-none">Reputation</p>
+    <div className="space-y-8">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center space-x-4">
+          <Avatar className="h-16 w-16">
+            <AvatarImage src={avatarUrl} alt={displayName} />
+            <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
+          </Avatar>
+          <div>
+            <h2 className="text-lg font-semibold">{displayName}</h2>
+            <p className="text-sm text-muted-foreground">
+              OCID: {profile.ocid || "Not Connected"}
+            </p>
+          </div>
+        </div>
+      </div>
+      <div className="grid gap-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium">Reputation</h3>
+            <div className="flex items-center justify-between border rounded-lg p-3">
+              <div>
+                <p className="text-sm font-medium">{reputation} points</p>
                 <p className="text-sm text-muted-foreground">
-                  {profile.reputation} points
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Coins className="h-4 w-4 text-primary" />
-              <div className="space-y-1">
-                <p className="text-sm font-medium leading-none">EDU Balance</p>
-                <p className="text-sm text-muted-foreground">
-                  {profile.eduBalance} EDU
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Star className="h-4 w-4 text-primary" />
-              <div className="space-y-1">
-                <p className="text-sm font-medium leading-none">OC Points</p>
-                <p className="text-sm text-muted-foreground">
-                  {profile.ocPoints} points
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Award className="h-4 w-4 text-primary" />
-              <div className="space-y-1">
-                <p className="text-sm font-medium leading-none">
-                  Verified Skills
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {profile.skills.length} skills
+                  {skills.length} skills
                 </p>
               </div>
             </div>
           </div>
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-medium">Skills</h3>
-            <div className="flex flex-wrap gap-2">
-              {profile.skills.map((skill, index) => (
-                <Badge key={index} variant="secondary">
-                  {skill}
-                </Badge>
-              ))}
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium">Progress</h3>
+            <div className="flex items-center justify-between border rounded-lg p-3">
+              <div>
+                <p className="text-sm font-medium">
+                  {completedCourses} courses completed
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Learning in progress
+                </p>
+              </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
