@@ -8,6 +8,21 @@ export const metadata = {
   title: "EduImpact - Decentralized Tech Education",
   description:
     "A blockchain-based platform for incentivizing learning and contributions to technology communities.",
+  icons: {
+    icon: [
+      {
+        url: "/logo.png",
+        href: "/logo.png",
+      },
+    ],
+    apple: [
+      {
+        url: "/logo.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
+  },
 };
 
 export default function RootLayout({ children }) {

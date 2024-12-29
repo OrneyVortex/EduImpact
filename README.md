@@ -120,14 +120,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [shadcn/ui](https://ui.shadcn.com/) for the beautiful UI components
 - The Web3 community for inspiration and support
 
-## 📞 Support
-
-For support, please:
-
-- Open an issue in this repository
-- Join our [Discord community](https://discord.gg/eduimpact)
-- Contact us at support@eduimpact.com
-
 ---
 
 Built with ❤️ for the future of tech education
