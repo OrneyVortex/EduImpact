@@ -1,36 +1,133 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# EduImpact - Decentralized Tech Education Platform
 
-## Getting Started
+EduImpact is a blockchain-based educational platform that connects tech learners with corporate sponsors through decentralized scholarships. The platform incentivizes learning and skill development in technology fields while providing verifiable credentials through blockchain technology.
 
-First, run the development server:
+## 🚀 Features
+
+### For Learners
+
+- **Milestone-Based Learning**: Progress through structured learning paths with clear milestones
+- **Blockchain Rewards**: Earn EDU tokens for completing educational milestones
+- **Verifiable Credentials**: Receive NFT certificates for your achievements
+- **OpenCampus ID Integration**: Manage your decentralized identity and credentials
+- **Progress Tracking**: Monitor your learning journey with detailed progress metrics
+
+### For Sponsors
+
+- **Corporate Sponsorships**: Fund the next generation of tech talent
+- **Talent Pipeline**: Connect with skilled learners in your technology domain
+- **Transparent Impact**: Track the impact of your educational investments
+- **Custom Programs**: Create tailored scholarship programs aligned with your needs
+
+## 🛠 Tech Stack
+
+- **Frontend**: Next.js 13+ with App Router
+- **UI Framework**: Tailwind CSS with shadcn/ui components
+- **Blockchain**: Ethereum/Web3 integration
+- **Authentication**: OpenCampus ID (OCID) for decentralized identity
+- **Smart Contracts**: Solidity for scholarship and reward management
+
+## 🏗 Project Structure
+
+```
+eduimpact/
+├── src/
+│   ├── app/                 # Next.js app router pages
+│   ├── components/          # Reusable React components
+│   ├── lib/                 # Utility functions and contexts
+│   ├── hooks/              # Custom React hooks
+│   └── config/             # Configuration files
+```
+
+## 🚦 Getting Started
+
+### Prerequisites
+
+- Node.js 16.8 or later
+- MetaMask or compatible Web3 wallet
+- OpenCampus ID account
+
+### Installation
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/yourusername/eduimpact.git
+cd eduimpact
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+# or
+yarn install
+```
+
+3. Set up environment variables:
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` with your configuration:
+
+```
+NEXT_PUBLIC_OCID_CLIENT_ID=your_ocid_client_id
+NEXT_PUBLIC_REDIRECT_URI=http://localhost:3000/redirect
+NEXT_PUBLIC_CONTRACT_ADDRESS=your_contract_address
+```
+
+4. Run the development server:
 
 ```bash
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## 🔄 Core Workflows
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Scholarship Application Process
 
-## Learn More
+1. Connect your Web3 wallet
+2. Link your OpenCampus ID
+3. Create your learner profile
+4. Browse available scholarships
+5. Apply for scholarships matching your interests
 
-To learn more about Next.js, take a look at the following resources:
+### Milestone Completion
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Start a milestone from your dashboard
+2. Complete the required learning tasks
+3. Submit proof of completion
+4. Receive verification and rewards
+5. Track your progress in real-time
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🤝 Contributing
 
-## Deploy on Vercel
+We welcome contributions to EduImpact! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📄 License
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🌟 Acknowledgments
+
+- [OpenCampus](https://opencampus.sh/) for OCID integration
+- [shadcn/ui](https://ui.shadcn.com/) for the beautiful UI components
+- The Web3 community for inspiration and support
+
+## 📞 Support
+
+For support, please:
+
+- Open an issue in this repository
+- Join our [Discord community](https://discord.gg/eduimpact)
+- Contact us at support@eduimpact.com
+
+---
+
+Built with ❤️ for the future of tech education

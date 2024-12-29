@@ -301,37 +301,24 @@ export default function MilestonesPage() {
 
   // Always show data (real or dummy) regardless of loading state
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-7xl mx-auto space-y-8 relative">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Your Milestones</h1>
-            <p className="text-muted-foreground">
-              Track your progress and achievements across all scholarships
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-primary" />
-              <span className="font-semibold">
-                {realMilestones.totalStaked || "2,150"} EDU
-              </span>
-              <span className="text-muted-foreground">
-                {realMilestones.totalStaked ? "staked" : "earned"}
-              </span>
-            </div>
-          </div>
+    <div className="container mx-auto px-4 py-12">
+      <div className="max-w-7xl mx-auto space-y-12">
+        {/* Page Header */}
+        <div className="text-center space-y-4">
+          <h1 className="text-4xl font-bold">Your Milestones</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Track your progress and achievements across all scholarships
+          </p>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card>
+          <Card className="border-0 shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Active Milestones
               </CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
+              <Clock className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -340,10 +327,10 @@ export default function MilestonesPage() {
               <p className="text-xs text-muted-foreground">in progress</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-0 shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Completed</CardTitle>
-              <CheckCircle className="h-4 w-4 text-muted-foreground" />
+              <CheckCircle className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -354,10 +341,10 @@ export default function MilestonesPage() {
               </p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-0 shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Upcoming</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
+              <FileText className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -368,12 +355,12 @@ export default function MilestonesPage() {
               </p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-0 shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Total Rewards
               </CardTitle>
-              <Coins className="h-4 w-4 text-muted-foreground" />
+              <Coins className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">2,150 EDU</div>
@@ -383,197 +370,192 @@ export default function MilestonesPage() {
         </div>
 
         {/* Milestones Tabs */}
-        <Tabs defaultValue="active" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="active">Active</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
-            <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-          </TabsList>
+        <Card className="border-0 shadow-md">
+          <CardContent className="p-6">
+            <Tabs defaultValue="active" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="active">Active</TabsTrigger>
+                <TabsTrigger value="completed">Completed</TabsTrigger>
+                <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+              </TabsList>
 
-          {/* Active Milestones */}
-          <TabsContent value="active">
-            <div className="space-y-6 relative">
-              {displayData.activeMilestones.map((milestone) => (
-                <Card key={milestone.id}>
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle>{milestone.milestone}</CardTitle>
-                        <CardDescription>
-                          {milestone.scholarshipTitle} • Sponsored by{" "}
-                          {milestone.sponsor}
-                        </CardDescription>
+              {/* Active Milestones */}
+              <TabsContent value="active">
+                <div className="space-y-6 relative">
+                  {displayData.activeMilestones.map((milestone) => (
+                    <Card
+                      key={milestone.id}
+                      className="border shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      <CardHeader>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <CardTitle>{milestone.milestone}</CardTitle>
+                            <CardDescription>
+                              {milestone.scholarshipTitle} • Sponsored by{" "}
+                              {milestone.sponsor}
+                            </CardDescription>
+                          </div>
+                          <Badge variant="secondary">{milestone.reward}</Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">
+                              Progress
+                            </span>
+                            <span>{milestone.progress}%</span>
+                          </div>
+                          <Progress
+                            value={milestone.progress}
+                            className="h-2"
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {isLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/5 backdrop-blur-[1px] rounded-lg">
+                      <div className="bg-background/90 px-6 py-3 rounded-lg border shadow-lg flex items-center gap-3">
+                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        <span>Loading blockchain data...</span>
                       </div>
-                      <Badge variant="secondary">{milestone.reward}</Badge>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Progress</span>
-                        <span>{milestone.progress}%</span>
-                      </div>
-                      <Progress value={milestone.progress} />
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium">Requirements</h4>
-                      <div className="space-y-2">
-                        {milestone.requirements.map((req, index) => (
-                          <div key={index} className="flex items-center gap-2">
-                            {req.isCompleted ? (
-                              <CheckCircle className="w-4 h-4 text-primary" />
-                            ) : (
-                              <XCircle className="w-4 h-4 text-muted-foreground" />
-                            )}
-                            <span
-                              className={`text-sm ${
-                                req.isCompleted ? "" : "text-muted-foreground"
-                              }`}
-                            >
-                              {req.task}
+                  )}
+                </div>
+              </TabsContent>
+
+              {/* Completed Milestones */}
+              <TabsContent value="completed">
+                <div className="space-y-6 relative">
+                  {displayData.completedMilestones.map((milestone) => (
+                    <Card
+                      key={milestone.id}
+                      className="border shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      <CardHeader>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <CardTitle>{milestone.milestone}</CardTitle>
+                            <CardDescription>
+                              {milestone.scholarshipTitle} • Sponsored by{" "}
+                              {milestone.sponsor}
+                            </CardDescription>
+                          </div>
+                          <Badge variant="secondary">{milestone.reward}</Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                          <h4 className="text-sm font-medium">
+                            Completed Requirements
+                          </h4>
+                          <div className="space-y-2">
+                            {milestone.requirements.map((req, index) => (
+                              <div
+                                key={index}
+                                className="flex items-center gap-2"
+                              >
+                                <CheckCircle className="w-4 h-4 text-primary" />
+                                <span className="text-sm">{req.task}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <GraduationCap className="w-4 h-4" />
+                            <span>
+                              Completed on{" "}
+                              {new Date(
+                                milestone.completedDate
+                              ).toLocaleDateString()}
                             </span>
                           </div>
-                        ))}
+                          <Button variant="outline">View Certificate</Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {isLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/5 backdrop-blur-[1px] rounded-lg">
+                      <div className="bg-background/90 px-6 py-3 rounded-lg border shadow-lg flex items-center gap-3">
+                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        <span>Loading blockchain data...</span>
                       </div>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Clock className="w-4 h-4" />
-                        <span>
-                          Due{" "}
-                          {new Date(milestone.deadline).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <Button disabled={isLoading}>Submit for Review</Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-              {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-background/5 backdrop-blur-[1px] rounded-lg">
-                  <div className="bg-background/90 px-4 py-2 rounded-lg border flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                    <span className="text-sm">Loading blockchain data...</span>
-                  </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </TabsContent>
+              </TabsContent>
 
-          {/* Completed Milestones */}
-          <TabsContent value="completed">
-            <div className="space-y-6 relative">
-              {displayData.completedMilestones.map((milestone) => (
-                <Card key={milestone.id}>
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle>{milestone.milestone}</CardTitle>
-                        <CardDescription>
-                          {milestone.scholarshipTitle} • Sponsored by{" "}
-                          {milestone.sponsor}
-                        </CardDescription>
-                      </div>
-                      <Badge variant="secondary">{milestone.reward}</Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium">
-                        Completed Requirements
-                      </h4>
-                      <div className="space-y-2">
-                        {milestone.requirements.map((req, index) => (
-                          <div key={index} className="flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4 text-primary" />
-                            <span className="text-sm">{req.task}</span>
+              {/* Upcoming Milestones */}
+              <TabsContent value="upcoming">
+                <div className="space-y-6 relative">
+                  {displayData.upcomingMilestones.map((milestone) => (
+                    <Card
+                      key={milestone.id}
+                      className="border shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      <CardHeader>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <CardTitle>{milestone.milestone}</CardTitle>
+                            <CardDescription>
+                              {milestone.scholarshipTitle} • Sponsored by{" "}
+                              {milestone.sponsor}
+                            </CardDescription>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <GraduationCap className="w-4 h-4" />
-                        <span>
-                          Completed on{" "}
-                          {new Date(
-                            milestone.completedDate
-                          ).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <Button variant="outline">View Certificate</Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-              {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-background/5 backdrop-blur-[1px] rounded-lg">
-                  <div className="bg-background/90 px-4 py-2 rounded-lg border flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                    <span className="text-sm">Loading blockchain data...</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-
-          {/* Upcoming Milestones */}
-          <TabsContent value="upcoming">
-            <div className="space-y-6 relative">
-              {displayData.upcomingMilestones.map((milestone) => (
-                <Card key={milestone.id}>
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle>{milestone.milestone}</CardTitle>
-                        <CardDescription>
-                          {milestone.scholarshipTitle} • Sponsored by{" "}
-                          {milestone.sponsor}
-                        </CardDescription>
-                      </div>
-                      <Badge variant="secondary">{milestone.reward}</Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium">Requirements</h4>
-                      <div className="space-y-2">
-                        {milestone.requirements.map((req, index) => (
-                          <div key={index} className="flex items-center gap-2">
-                            <BookOpen className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">
-                              {req}
+                          <Badge variant="secondary">{milestone.reward}</Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                          <h4 className="text-sm font-medium">Requirements</h4>
+                          <div className="space-y-2">
+                            {milestone.requirements.map((req, index) => (
+                              <div
+                                key={index}
+                                className="flex items-center gap-2"
+                              >
+                                <BookOpen className="w-4 h-4 text-muted-foreground" />
+                                <span className="text-sm text-muted-foreground">
+                                  {req}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Clock className="w-4 h-4" />
+                            <span>
+                              Starts{" "}
+                              {new Date(
+                                milestone.startDate
+                              ).toLocaleDateString()}
                             </span>
                           </div>
-                        ))}
+                          <Button variant="outline" disabled>
+                            Coming Soon
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {isLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/5 backdrop-blur-[1px] rounded-lg">
+                      <div className="bg-background/90 px-6 py-3 rounded-lg border shadow-lg flex items-center gap-3">
+                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        <span>Loading blockchain data...</span>
                       </div>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Clock className="w-4 h-4" />
-                        <span>
-                          Starts{" "}
-                          {new Date(milestone.startDate).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <Button variant="outline" disabled>
-                        Coming Soon
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-              {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-background/5 backdrop-blur-[1px] rounded-lg">
-                  <div className="bg-background/90 px-4 py-2 rounded-lg border flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                    <span className="text-sm">Loading blockchain data...</span>
-                  </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -207,57 +207,64 @@ export default function ScholarshipsPage() {
   ];
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="container mx-auto px-4 py-12">
+      <div className="max-w-7xl mx-auto space-y-12">
         {/* Page Header */}
-        <div className="text-center">
-          <h1 className="text-3xl font-bold mb-2">Available Scholarships</h1>
-          <p className="text-muted-foreground">
+        <div className="text-center space-y-4">
+          <h1 className="text-4xl font-bold">Available Scholarships</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Discover and apply for tech-focused scholarships from leading
             companies
           </p>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col md:flex-row gap-4 justify-center">
-          <Input
-            placeholder="Search scholarships..."
-            className="md:w-[300px]"
-          />
-          <Select defaultValue="All Categories">
-            <SelectTrigger className="md:w-[200px]">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select defaultValue="newest">
-            <SelectTrigger className="md:w-[200px]">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="newest">Newest First</SelectItem>
-              <SelectItem value="amount">Highest Amount</SelectItem>
-              <SelectItem value="deadline">Deadline</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row gap-4 justify-center">
+              <Input
+                placeholder="Search scholarships..."
+                className="md:w-[300px]"
+              />
+              <Select defaultValue="All Categories">
+                <SelectTrigger className="md:w-[200px]">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select defaultValue="newest">
+                <SelectTrigger className="md:w-[200px]">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Newest First</SelectItem>
+                  <SelectItem value="amount">Highest Amount</SelectItem>
+                  <SelectItem value="deadline">Deadline</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Loading State */}
         {loading && (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">Loading scholarships...</p>
+          <div className="flex items-center justify-center py-12">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              <span>Loading scholarships...</span>
+            </div>
           </div>
         )}
 
         {/* No Scholarships State */}
         {!loading && allScholarships.length === 0 && (
-          <div className="text-center py-8">
+          <div className="text-center py-12">
             <p className="text-muted-foreground">
               No scholarships available at the moment.
             </p>
@@ -265,19 +272,26 @@ export default function ScholarshipsPage() {
         )}
 
         {/* Scholarships Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {allScholarships.map((scholarship) => (
-            <Card key={scholarship.id}>
+            <Card
+              key={scholarship.id}
+              className="border-0 shadow-md hover:shadow-lg transition-shadow"
+            >
               <CardHeader>
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-xl">{scholarship.title}</CardTitle>
+                  <div className="space-y-2">
+                    <CardTitle className="text-xl">
+                      {scholarship.title}
+                    </CardTitle>
+                    <CardDescription className="flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      {scholarship.sponsor?.slice(0, 6)}...
+                      {scholarship.sponsor?.slice(-4) || scholarship.sponsor}
+                    </CardDescription>
+                  </div>
                   <Badge variant="secondary">{scholarship.category}</Badge>
                 </div>
-                <CardDescription className="flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  {scholarship.sponsor?.slice(0, 6)}...
-                  {scholarship.sponsor?.slice(-4) || scholarship.sponsor}
-                </CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4">
@@ -303,7 +317,7 @@ export default function ScholarshipsPage() {
                   </div>
                 </div>
               </CardContent>
-              <CardFooter className="flex justify-between items-center">
+              <CardFooter className="flex justify-between items-center border-t pt-4">
                 <p className="text-sm text-muted-foreground">
                   Deadline:{" "}
                   {scholarship.deadline instanceof Date
