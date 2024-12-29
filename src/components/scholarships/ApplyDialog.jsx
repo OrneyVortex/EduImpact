@@ -57,7 +57,8 @@ export default function ApplyDialog({ scholarship, trigger }) {
     if (!isInitialized || !authState?.isAuthenticated || !authState?.OCId) {
       toast({
         title: "OpenCampus ID Required",
-        description: "Please connect your OpenCampus ID to apply for scholarships.",
+        description:
+          "Please connect your OpenCampus ID to apply for scholarships.",
         variant: "destructive",
       });
       await redirectToOCID();
@@ -68,7 +69,8 @@ export default function ApplyDialog({ scholarship, trigger }) {
     if (authState.ethAddress?.toLowerCase() !== address?.toLowerCase()) {
       toast({
         title: "Wallet Mismatch",
-        description: "Please use the wallet address linked to your OpenCampus ID.",
+        description:
+          "Please use the wallet address linked to your OpenCampus ID.",
         variant: "destructive",
       });
       return;
@@ -91,14 +93,17 @@ export default function ApplyDialog({ scholarship, trigger }) {
       if (error.reason?.includes("Active OpenCampusID required")) {
         toast({
           title: "OpenCampus ID Required",
-          description: "Please ensure your OpenCampus ID is active and properly linked to your wallet.",
+          description:
+            "Please ensure your OpenCampus ID is active and properly linked to your wallet.",
           variant: "destructive",
         });
         await redirectToOCID();
       } else {
         toast({
           title: "Error",
-          description: error.message || "Failed to apply for scholarship. Please try again.",
+          description:
+            error.message ||
+            "Failed to apply for scholarship. Please try again.",
           variant: "destructive",
         });
       }
