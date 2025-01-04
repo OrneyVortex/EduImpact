@@ -19,6 +19,54 @@ EduImpact is a blockchain-based educational platform that connects tech learners
 - **Transparent Impact**: Track the impact of your educational investments
 - **Custom Programs**: Create tailored scholarship programs aligned with your needs
 
+## 🛠 Platform Workflows
+
+### Learner Journey
+
+```mermaid
+flowchart TD
+    A[Visit Platform] --> B[Connect Wallet]
+    B --> C[Link OpenCampus ID]
+    C --> D[Create Profile]
+    D --> E[Browse Scholarships]
+    E --> F[Apply for Scholarship]
+    F --> G{Application Approved?}
+    G -->|Yes| H[Start Learning Path]
+    G -->|No| E
+    H --> I[Complete Milestones]
+    I --> J[Submit Proof]
+    J --> K{Verified?}
+    K -->|Yes| L[Receive EDU Tokens]
+    K -->|No| I
+    L --> M[Earn Certificates]
+    M --> N[Build Portfolio]
+    N --> O[Apply for More]
+    O --> E
+```
+
+### Sponsor Journey
+
+```mermaid
+flowchart TD
+    A[Visit Platform] --> B[Connect Wallet]
+    B --> C[Link OpenCampus ID]
+    C --> D[Create Sponsor Profile]
+    D --> E[Create Scholarship]
+    E --> F[Define Requirements]
+    F --> G[Set Milestones]
+    G --> H[Fund with EDU Tokens]
+    H --> I[Review Applications]
+    I --> J{Select Scholars}
+    J --> K[Monitor Progress]
+    K --> L{Verify Milestones}
+    L -->|Approved| M[Release Rewards]
+    L -->|Rejected| N[Request Revisions]
+    M --> O[Track Impact]
+    O --> P[Create More Programs]
+    P --> E
+    N --> K
+```
+
 ## 🛠 Tech Stack
 
 - **Frontend**: Next.js 13+ with App Router
@@ -88,25 +136,7 @@ yarn dev
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-## 🔄 Core Workflows
-
-### Scholarship Application Process
-
-1. Connect your Web3 wallet
-2. Link your OpenCampus ID
-3. Create your learner profile
-4. Browse available scholarships
-5. Apply for scholarships matching your interests
-
-### Milestone Completion
-
-1. Start a milestone from your dashboard
-2. Complete the required learning tasks
-3. Submit proof of completion
-4. Receive verification and rewards
-5. Track your progress in real-time
-
-## 🤝 Contributing
+## 🔄 Contributing
 
 We welcome contributions to EduImpact! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
 
@@ -120,6 +150,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [shadcn/ui](https://ui.shadcn.com/) for the beautiful UI components
 - The Web3 community for inspiration and support
 
----
-
-Built with ❤️ for the future of tech education
+Built with ❤️ for the future of tech education with Educhain
