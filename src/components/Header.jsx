@@ -32,12 +32,14 @@ import {
   Target,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 export default function Header() {
   const { connect, disconnect, isConnected, address, hasProfile, profile } =
     useWallet();
   const router = useRouter();
+  const pathname = usePathname();
 
   const navigation = [
     { name: "Explore", href: "/explore", icon: Book },
@@ -47,25 +49,45 @@ export default function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center space-x-2">
-            <GraduationCap className="h-6 w-6" />
-            <span className="font-bold text-xl">EduImpact</span>
+          <Link href="/" className="flex items-center space-x-2 hover-effect">
+            <div className="relative">
+              <GraduationCap className="h-6 w-6 text-primary" />
+              <div className="absolute -inset-1 rounded-full bg-primary/20 blur-sm" />
+            </div>
+            <span className="font-bold text-xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80">
+              EduImpact
+            </span>
           </Link>
 
-          <nav className="hidden md:flex items-center space-x-4">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="flex items-center space-x-1 text-sm font-medium text-muted-foreground hover:text-primary"
-              >
-                <item.icon className="h-4 w-4" />
-                <span>{item.name}</span>
-              </Link>
-            ))}
+          <nav className="hidden md:flex items-center space-x-6">
+            {navigation.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center space-x-1 text-sm font-medium transition-colors hover:text-primary",
+                    "relative py-2",
+                    isActive ? "text-primary" : "text-muted-foreground"
+                  )}
+                >
+                  <item.icon
+                    className={cn(
+                      "h-4 w-4 transition-transform",
+                      isActive && "scale-110"
+                    )}
+                  />
+                  <span>{item.name}</span>
+                  {isActive && (
+                    <span className="absolute -bottom-px left-0 h-px w-full bg-primary" />
+                  )}
+                </Link>
+              );
+            })}
           </nav>
         </div>
 
@@ -73,27 +95,33 @@ export default function Header() {
           <Link href="/sponsor/dashboard">
             <Button
               variant="outline"
-              className="hidden sm:flex items-center gap-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              className="hidden sm:flex items-center gap-2 border-primary/20 hover:border-primary/40 hover:bg-primary/10 text-primary transition-all duration-300"
             >
-              <Sparkles className="h-4 w-4" />
+              <div className="relative">
+                <Sparkles className="h-4 w-4" />
+                <div className="absolute -inset-1 rounded-full bg-primary/20 animate-pulse blur-sm" />
+              </div>
               Are you a Sponsor?
             </Button>
           </Link>
 
           {!isConnected ? (
-            <Button onClick={connect} className="flex items-center gap-2">
+            <Button
+              onClick={connect}
+              className="flex items-center gap-2 hover-effect bg-primary/90 hover:bg-primary"
+            >
               <Wallet className="h-4 w-4" />
               Connect Wallet
             </Button>
           ) : !hasProfile ? (
             <Dialog>
               <DialogTrigger asChild>
-                <Button className="flex items-center gap-2">
+                <Button className="flex items-center gap-2 hover-effect">
                   <User className="h-4 w-4" />
                   Create Profile
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="glass-effect">
                 <DialogHeader>
                   <DialogTitle>OpenCampus ID Required</DialogTitle>
                   <DialogDescription>
@@ -107,31 +135,43 @@ export default function Header() {
             <div className="flex items-center gap-4">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
+                  <Button
+                    variant="outline"
+                    className="flex items-center gap-2 hover-effect gradient-border"
+                  >
+                    <User className="h-4 w-4 text-primary" />
                     <span className="hidden sm:inline">
                       {address?.slice(0, 6)}...{address?.slice(-4)}
                     </span>
-                    <ChevronDown className="h-4 w-4" />
+                    <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-56 glass-effect">
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/profile" className="cursor-pointer">
+                    <Link
+                      href="/profile"
+                      className="cursor-pointer hover-effect"
+                    >
                       <User className="mr-2 h-4 w-4" />
                       Profile
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/sponsor/dashboard" className="cursor-pointer">
+                    <Link
+                      href="/sponsor/dashboard"
+                      className="cursor-pointer hover-effect"
+                    >
                       <Trophy className="mr-2 h-4 w-4" />
                       Sponsor Dashboard
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/scholar/dashboard" className="cursor-pointer">
+                    <Link
+                      href="/scholar/dashboard"
+                      className="cursor-pointer hover-effect"
+                    >
                       <Book className="mr-2 h-4 w-4" />
                       Scholar Dashboard
                     </Link>
@@ -139,7 +179,7 @@ export default function Header() {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={disconnect}
-                    className="text-red-600 cursor-pointer"
+                    className="text-destructive hover:text-destructive/90 cursor-pointer hover-effect"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
                     Disconnect

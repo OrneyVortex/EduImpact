@@ -18,11 +18,22 @@ import {
   CardTitle,
 } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
-import { Coins, Users, Trophy } from "lucide-react";
+import {
+  Coins,
+  Users,
+  Trophy,
+  Search,
+  Filter,
+  Clock,
+  ArrowRight,
+  Sparkles,
+  Target,
+} from "lucide-react";
 import ApplyDialog from "../../components/scholarships/ApplyDialog";
 import { useState, useEffect } from "react";
 import { useWallet } from "../../lib/WalletContext";
 import { getScholarshipDetails } from "../../lib/contracts";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Mock data - replace with actual API calls later
 const scholarships = [
@@ -124,10 +135,37 @@ const categories = [
   "Cybersecurity",
 ];
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 10,
+    },
+  },
+};
+
 export default function ScholarshipsPage() {
   const [realScholarships, setRealScholarships] = useState([]);
   const [loading, setLoading] = useState(true);
   const { isConnected } = useWallet();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All Categories");
+  const [sortBy, setSortBy] = useState("newest");
 
   useEffect(() => {
     loadRealScholarships();
@@ -194,142 +232,220 @@ export default function ScholarshipsPage() {
     }
   };
 
-  // Combine dummy and real scholarships, ensuring all required fields are present
-  const allScholarships = [
-    ...scholarships,
-    ...realScholarships.filter(
+  // Combine and filter scholarships
+  const filteredScholarships = [...scholarships, ...realScholarships]
+    .filter(
       (scholarship) =>
         scholarship &&
         scholarship.title &&
         scholarship.amount &&
-        scholarship.totalMilestones > 0
-    ),
-  ];
+        scholarship.totalMilestones > 0 &&
+        (searchTerm === "" ||
+          scholarship.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          scholarship.description
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase())) &&
+        (selectedCategory === "All Categories" ||
+          scholarship.category === selectedCategory)
+    )
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "amount":
+          return parseInt(b.amount) - parseInt(a.amount);
+        case "deadline":
+          return new Date(a.deadline) - new Date(b.deadline);
+        default:
+          return 0;
+      }
+    });
 
   return (
     <div className="container mx-auto px-4 py-12">
-      <div className="max-w-7xl mx-auto space-y-12">
-        {/* Page Header */}
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold">Available Scholarships</h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+      <motion.div
+        className="max-w-7xl mx-auto space-y-12"
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+      >
+        {/* Hero Section */}
+        <section className="text-center space-y-6 relative py-12">
+          {/* Background decoration */}
+          <div className="absolute inset-0 -z-10">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-secondary/5 animate-gradient" />
+            <div className="absolute top-0 -left-4 w-72 h-72 bg-primary/10 rounded-full mix-blend-multiply filter blur-3xl animate-blob" />
+            <div className="absolute bottom-0 -right-4 w-72 h-72 bg-secondary/10 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000" />
+          </div>
+
+          <motion.div variants={itemVariants}>
+            <span className="px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary border border-primary/20 inline-block mb-4">
+              Find Your Next Opportunity
+            </span>
+          </motion.div>
+          <motion.h1
+            variants={itemVariants}
+            className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80"
+          >
+            Available Scholarships
+          </motion.h1>
+          <motion.p
+            variants={itemVariants}
+            className="text-xl text-muted-foreground max-w-2xl mx-auto"
+          >
             Discover and apply for tech-focused scholarships from leading
             companies
-          </p>
-        </div>
+          </motion.p>
+        </section>
 
         {/* Filters */}
-        <Card className="border-0 shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-4 justify-center">
-              <Input
-                placeholder="Search scholarships..."
-                className="md:w-[300px]"
-              />
-              <Select defaultValue="All Categories">
-                <SelectTrigger className="md:w-[200px]">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select defaultValue="newest">
-                <SelectTrigger className="md:w-[200px]">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">Newest First</SelectItem>
-                  <SelectItem value="amount">Highest Amount</SelectItem>
-                  <SelectItem value="deadline">Deadline</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Loading State */}
-        {loading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              <span>Loading scholarships...</span>
-            </div>
-          </div>
-        )}
-
-        {/* No Scholarships State */}
-        {!loading && allScholarships.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">
-              No scholarships available at the moment.
-            </p>
-          </div>
-        )}
+        <motion.div variants={itemVariants}>
+          <Card className="border-0 shadow-sm glass-effect">
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row gap-4 justify-center">
+                <div className="relative md:w-[300px]">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Search scholarships..."
+                    className="pl-10"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <Select
+                  value={selectedCategory}
+                  onValueChange={setSelectedCategory}
+                >
+                  <SelectTrigger className="md:w-[200px]">
+                    <Filter className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="md:w-[200px]">
+                    <Target className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">Newest First</SelectItem>
+                    <SelectItem value="amount">Highest Amount</SelectItem>
+                    <SelectItem value="deadline">Deadline</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
         {/* Scholarships Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {allScholarships.map((scholarship) => (
-            <Card
-              key={scholarship.id}
-              className="border-0 shadow-md hover:shadow-lg transition-shadow"
-            >
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div className="space-y-2">
-                    <CardTitle className="text-xl">
-                      {scholarship.title}
-                    </CardTitle>
-                    <CardDescription className="flex items-center gap-2">
-                      <Users className="w-4 h-4" />
-                      {scholarship.sponsor?.slice(0, 6)}...
-                      {scholarship.sponsor?.slice(-4) || scholarship.sponsor}
-                    </CardDescription>
-                  </div>
-                  <Badge variant="secondary">{scholarship.category}</Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {scholarship.description}
+        <AnimatePresence mode="wait">
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            variants={containerVariants}
+            key={searchTerm + selectedCategory + sortBy}
+          >
+            {loading ? (
+              // Loading skeleton
+              Array.from({ length: 6 }).map((_, index) => (
+                <motion.div
+                  key={`skeleton-${index}`}
+                  variants={itemVariants}
+                  className="animate-pulse"
+                >
+                  <Card className="h-[400px] bg-muted/5" />
+                </motion.div>
+              ))
+            ) : filteredScholarships.length === 0 ? (
+              <motion.div
+                variants={itemVariants}
+                className="col-span-full text-center py-12"
+              >
+                <Trophy className="w-12 h-12 text-primary mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">
+                  No Scholarships Found
+                </h3>
+                <p className="text-muted-foreground">
+                  Try adjusting your filters or check back later for new
+                  opportunities
                 </p>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {scholarship.skills?.map((skill) => (
-                    <Badge key={skill} variant="outline">
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
-                <div className="flex items-center gap-4 text-sm">
-                  <div className="flex items-center gap-1">
-                    <Coins className="w-4 h-4 text-primary" />
-                    <span className="font-semibold">
-                      {scholarship.amount} EDU
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Trophy className="w-4 h-4 text-primary" />
-                    <span>{scholarship.totalMilestones} Milestones</span>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-between items-center border-t pt-4">
-                <p className="text-sm text-muted-foreground">
-                  Deadline:{" "}
-                  {scholarship.deadline instanceof Date
-                    ? scholarship.deadline.toLocaleDateString()
-                    : new Date(scholarship.deadline).toLocaleDateString()}
-                </p>
-                <ApplyDialog scholarship={scholarship} />
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      </div>
+              </motion.div>
+            ) : (
+              filteredScholarships.map((scholarship, index) => (
+                <motion.div key={scholarship.id} variants={itemVariants} layout>
+                  <Card className="group hover-effect h-full flex flex-col">
+                    <CardHeader>
+                      <div className="flex justify-between items-start gap-4">
+                        <div>
+                          <CardTitle className="text-xl mb-1">
+                            {scholarship.title}
+                          </CardTitle>
+                          <CardDescription className="flex items-center gap-2">
+                            <Users className="w-4 h-4" />
+                            Sponsored by {scholarship.sponsor}
+                          </CardDescription>
+                        </div>
+                        <Badge
+                          variant="secondary"
+                          className="bg-primary/10 text-primary border-primary/20"
+                        >
+                          {scholarship.category}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="flex-grow space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        {scholarship.description}
+                      </p>
+
+                      <div className="flex flex-wrap gap-2">
+                        {scholarship.skills.map((skill) => (
+                          <Badge
+                            key={skill}
+                            variant="outline"
+                            className="gradient-border"
+                          >
+                            {skill}
+                          </Badge>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <Target className="w-4 h-4" />
+                          {scholarship.totalMilestones} milestones
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4" />
+                          {new Date(scholarship.deadline).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </CardContent>
+                    <CardFooter className="flex justify-between items-center pt-4 border-t">
+                      <div className="flex items-center gap-2">
+                        <Coins className="w-4 h-4 text-primary" />
+                        <span className="font-semibold text-primary">
+                          {scholarship.amount} EDU
+                        </span>
+                      </div>
+                      <ApplyDialog scholarship={scholarship}>
+                        <Button className="group" variant="ghost">
+                          Apply Now
+                          <Sparkles className="ml-2 h-4 w-4 transition-transform group-hover:rotate-12" />
+                        </Button>
+                      </ApplyDialog>
+                    </CardFooter>
+                  </Card>
+                </motion.div>
+              ))
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
     </div>
   );
 }

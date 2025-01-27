@@ -22,9 +22,13 @@ import {
   Brain,
   Cloud,
   Shield,
+  ArrowRight,
+  Clock,
 } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
 
 // Mock data for featured content
 const featuredScholarships = [
@@ -158,242 +162,305 @@ const successStories = [
   },
 ];
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 10,
+    },
+  },
+};
+
+const StatCard = ({ icon: Icon, value, label }) => {
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+
+  const opacity = useTransform(scrollYProgress, [0, 0.5], [0, 1]);
+  const scale = useTransform(scrollYProgress, [0, 0.5], [0.8, 1]);
+
+  return (
+    <motion.div ref={ref} style={{ opacity, scale }}>
+      <Card className="group hover-effect">
+        <CardHeader className="text-center relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <CardTitle className="relative">
+            <Icon className="w-8 h-8 mx-auto text-primary mb-2 transition-transform group-hover:scale-110" />
+            <motion.span
+              className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              {value}
+            </motion.span>
+          </CardTitle>
+          <CardDescription className="font-medium">{label}</CardDescription>
+        </CardHeader>
+      </Card>
+    </motion.div>
+  );
+};
+
 export default function ExplorePage() {
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="max-w-7xl mx-auto space-y-12">
+      <motion.div
+        className="max-w-7xl mx-auto space-y-12"
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+      >
         {/* Hero Section */}
-        <section className="text-center space-y-4">
-          <h1 className="text-4xl font-bold">Explore Learning Opportunities</h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+        <section className="text-center space-y-6 relative py-12">
+          {/* Background decoration */}
+          <div className="absolute inset-0 -z-10">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-secondary/5 animate-gradient" />
+            <div className="absolute top-0 -left-4 w-72 h-72 bg-primary/10 rounded-full mix-blend-multiply filter blur-3xl animate-blob" />
+            <div className="absolute bottom-0 -right-4 w-72 h-72 bg-secondary/10 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000" />
+          </div>
+
+          <motion.div variants={itemVariants}>
+            <span className="px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary border border-primary/20 inline-block mb-4">
+              Discover Opportunities
+            </span>
+          </motion.div>
+          <motion.h1
+            variants={itemVariants}
+            className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80"
+          >
+            Explore Learning Opportunities
+          </motion.h1>
+          <motion.p
+            variants={itemVariants}
+            className="text-xl text-muted-foreground max-w-3xl mx-auto"
+          >
             Discover scholarships, build skills, and earn rewards while learning
             from industry experts
-          </p>
+          </motion.p>
         </section>
 
         {/* Quick Stats */}
         <section className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="text-center">
-              <CardTitle>
-                <Trophy className="w-8 h-8 mx-auto text-primary mb-2" />
-                <span className="text-2xl font-bold">50+</span>
-              </CardTitle>
-              <CardDescription>Active Scholarships</CardDescription>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="text-center">
-              <CardTitle>
-                <Users className="w-8 h-8 mx-auto text-primary mb-2" />
-                <span className="text-2xl font-bold">1000+</span>
-              </CardTitle>
-              <CardDescription>Registered Scholars</CardDescription>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="text-center">
-              <CardTitle>
-                <Briefcase className="w-8 h-8 mx-auto text-primary mb-2" />
-                <span className="text-2xl font-bold">25+</span>
-              </CardTitle>
-              <CardDescription>Partner Companies</CardDescription>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="text-center">
-              <CardTitle>
-                <TrendingUp className="w-8 h-8 mx-auto text-primary mb-2" />
-                <span className="text-2xl font-bold">50,000</span>
-              </CardTitle>
-              <CardDescription>EDU Distributed</CardDescription>
-            </CardHeader>
-          </Card>
+          <StatCard icon={Trophy} value="50+" label="Active Scholarships" />
+          <StatCard icon={Users} value="1000+" label="Registered Scholars" />
+          <StatCard icon={Briefcase} value="25+" label="Partner Companies" />
+          <StatCard icon={TrendingUp} value="50,000" label="EDU Distributed" />
         </section>
 
         {/* Main Content Tabs */}
-        <Tabs defaultValue="featured" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-1 md:grid-cols-4">
-            <TabsTrigger value="featured">Featured Scholarships</TabsTrigger>
-            <TabsTrigger value="categories">Top Categories</TabsTrigger>
-            <TabsTrigger value="success">Success Stories</TabsTrigger>
-            <TabsTrigger value="upcoming">Upcoming Programs</TabsTrigger>
-          </TabsList>
+        <motion.div variants={itemVariants}>
+          <Tabs defaultValue="featured" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-1 md:grid-cols-4 p-1 glass-effect">
+              <TabsTrigger
+                value="featured"
+                className="data-[state=active]:bg-primary/10"
+              >
+                Featured Scholarships
+              </TabsTrigger>
+              <TabsTrigger
+                value="categories"
+                className="data-[state=active]:bg-primary/10"
+              >
+                Top Categories
+              </TabsTrigger>
+              <TabsTrigger
+                value="success"
+                className="data-[state=active]:bg-primary/10"
+              >
+                Success Stories
+              </TabsTrigger>
+              <TabsTrigger
+                value="upcoming"
+                className="data-[state=active]:bg-primary/10"
+              >
+                Upcoming Programs
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Featured Scholarships */}
-          <TabsContent value="featured">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {featuredScholarships.map((scholarship) => (
-                <Card key={scholarship.id} className="flex flex-col">
-                  <CardHeader>
-                    <div className="flex justify-between items-start gap-4">
-                      <div>
-                        <CardTitle className="text-xl mb-1">
-                          {scholarship.title}
-                        </CardTitle>
-                        <CardDescription className="flex items-center gap-2">
-                          <Users className="w-4 h-4" />
-                          Sponsored by {scholarship.sponsor}
-                        </CardDescription>
-                      </div>
-                      <Badge variant="secondary">{scholarship.category}</Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex-grow space-y-4">
-                    <p className="text-sm text-muted-foreground">
-                      {scholarship.description}
-                    </p>
-
-                    <div className="flex flex-wrap gap-2">
-                      {scholarship.skills.map((skill) => (
-                        <Badge key={skill} variant="outline">
-                          {skill}
-                        </Badge>
-                      ))}
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">
-                          Total Reward:
-                        </span>
-                        <span className="font-semibold text-primary">
-                          {scholarship.amount}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">
-                          Applicants:
-                        </span>
-                        <span>{scholarship.applicants}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">
-                          Deadline:
-                        </span>
-                        <span>
-                          {new Date(scholarship.deadline).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Trophy className="w-4 h-4 text-primary" />
-                        <span className="text-sm font-medium">Milestones</span>
-                      </div>
-                      <div className="space-y-1">
-                        {scholarship.milestones.map((milestone, index) => (
-                          <div
-                            key={index}
-                            className="flex justify-between text-sm"
-                          >
-                            <span className="text-muted-foreground">
-                              {milestone.title}
-                            </span>
-                            <span>{milestone.reward}</span>
+            {/* Featured Scholarships */}
+            <TabsContent value="featured">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {featuredScholarships.map((scholarship, index) => (
+                  <motion.div
+                    key={scholarship.id}
+                    variants={itemVariants}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true }}
+                    custom={index}
+                  >
+                    <Card className="group hover-effect h-full flex flex-col">
+                      <CardHeader>
+                        <div className="flex justify-between items-start gap-4">
+                          <div>
+                            <CardTitle className="text-xl mb-1">
+                              {scholarship.title}
+                            </CardTitle>
+                            <CardDescription className="flex items-center gap-2">
+                              <Users className="w-4 h-4" />
+                              Sponsored by {scholarship.sponsor}
+                            </CardDescription>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="pt-4">
-                    <Button asChild className="w-full">
-                      <Link href={`/scholarships/${scholarship.id}`}>
-                        View Details
-                      </Link>
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
+                          <Badge
+                            variant="secondary"
+                            className="bg-primary/10 text-primary border-primary/20"
+                          >
+                            {scholarship.category}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="flex-grow space-y-4">
+                        <p className="text-sm text-muted-foreground">
+                          {scholarship.description}
+                        </p>
 
-          {/* Categories */}
-          <TabsContent value="categories">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {topCategories.map((category, index) => (
-                <Card
-                  key={index}
-                  className="hover:border-primary transition-colors cursor-pointer"
-                >
-                  <CardHeader>
-                    <category.icon className="w-8 h-8 text-primary mb-2" />
-                    <CardTitle>{category.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span>Active Scholarships:</span>
-                        <span>{category.scholarships}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Avg. Reward:</span>
-                        <span>{category.avgReward}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
+                        <div className="flex flex-wrap gap-2">
+                          {scholarship.skills.map((skill) => (
+                            <Badge
+                              key={skill}
+                              variant="outline"
+                              className="gradient-border"
+                            >
+                              {skill}
+                            </Badge>
+                          ))}
+                        </div>
 
-          {/* Success Stories */}
-          <TabsContent value="success">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {successStories.map((story, index) => (
-                <Card key={index}>
-                  <CardHeader>
-                    <GraduationCap className="w-8 h-8 text-primary mb-2" />
-                    <CardTitle>{story.name}</CardTitle>
-                    <CardDescription>{story.achievement}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {story.description}
-                    </p>
-                    <div className="flex justify-between items-center">
-                      <span>Earned:</span>
-                      <span className="font-semibold">{story.reward}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
+                        <div className="flex items-center justify-between text-sm text-muted-foreground">
+                          <div className="flex items-center gap-2">
+                            <Users className="w-4 h-4" />
+                            {scholarship.applicants} applicants
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4" />
+                            {new Date(
+                              scholarship.deadline
+                            ).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </CardContent>
+                      <CardFooter className="flex justify-between items-center pt-4 border-t">
+                        <div className="font-semibold text-primary">
+                          {scholarship.amount}
+                        </div>
+                        <Button className="group" variant="ghost">
+                          View Details
+                          <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            </TabsContent>
 
-          {/* Upcoming Programs */}
-          <TabsContent value="upcoming">
-            <div className="text-center py-12">
-              <Target className="w-12 h-12 mx-auto text-primary mb-4" />
-              <h3 className="text-2xl font-bold mb-2">Coming Soon!</h3>
-              <p className="text-muted-foreground mb-6">
-                We're preparing exciting new learning programs. Stay tuned!
-              </p>
-              <Button asChild>
-                <Link href="/scholarships">Browse Current Scholarships</Link>
-              </Button>
-            </div>
-          </TabsContent>
-        </Tabs>
+            {/* Top Categories */}
+            <TabsContent value="categories">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {topCategories.map((category, index) => (
+                  <motion.div
+                    key={category.name}
+                    variants={itemVariants}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true }}
+                    custom={index}
+                  >
+                    <Card className="group hover-effect">
+                      <CardHeader>
+                        <div className="relative inline-block mb-4">
+                          <category.icon className="w-12 h-12 text-primary" />
+                          <motion.div
+                            initial={false}
+                            animate={{ scale: [1, 1.2, 1] }}
+                            transition={{
+                              duration: 0.5,
+                              repeat: Infinity,
+                              repeatDelay: 3,
+                            }}
+                            className="absolute -inset-2 rounded-full bg-primary/20 blur-sm -z-10"
+                          />
+                        </div>
+                        <CardTitle>{category.name}</CardTitle>
+                        <CardDescription>
+                          {category.scholarships} scholarships available
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-sm text-muted-foreground">
+                          Average reward: {category.avgReward}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            </TabsContent>
 
-        {/* Call to Action */}
-        <section className="text-center py-12 bg-muted rounded-lg">
-          <h2 className="text-3xl font-bold mb-4">Ready to Start Learning?</h2>
-          <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-            Join our community of learners and earn while you learn. Apply for
-            scholarships, complete milestones, and build your career in tech.
-          </p>
-          <div className="flex gap-4 justify-center">
-            <Button asChild size="lg">
-              <Link href="/scholarships">Browse Scholarships</Link>
-            </Button>
-            <Button variant="outline" size="lg" asChild>
-              <Link href="/sponsor/create">Become a Sponsor</Link>
-            </Button>
-          </div>
-        </section>
-      </div>
+            {/* Success Stories */}
+            <TabsContent value="success">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {successStories.map((story, index) => (
+                  <motion.div
+                    key={story.name}
+                    variants={itemVariants}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true }}
+                    custom={index}
+                  >
+                    <Card className="group hover-effect">
+                      <CardHeader>
+                        <CardTitle className="text-lg">{story.name}</CardTitle>
+                        <Badge className="bg-primary/10 text-primary border-primary/20 mt-2">
+                          {story.achievement}
+                        </Badge>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          {story.description}
+                        </p>
+                        <div className="text-sm font-medium text-primary">
+                          Earned: {story.reward}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="upcoming">
+              <div className="text-center py-12">
+                <GraduationCap className="w-12 h-12 text-primary mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Coming Soon</h3>
+                <p className="text-muted-foreground">
+                  New learning opportunities are being added regularly. Check
+                  back soon!
+                </p>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }
