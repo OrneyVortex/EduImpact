@@ -18,7 +18,7 @@ export default function ClientLayout({ children }) {
         <div className="relative min-h-screen flex flex-col">
           <Header />
           <main className="flex-1">
-            <div className="container py-6">{children}</div>
+            <div className="container">{children}</div>
           </main>
         </div>
         <Toaster />

@@ -38,9 +38,9 @@ export default function RootLayout({ children }) {
           <div className="fixed top-0 z-40 w-full backdrop-blur-[8px] bg-background/60 transition-all duration-300" />
 
           {/* Main content */}
-          <main className="flex-1">
-            <ClientLayout>
-              <div className="animate-fade-in">{children}</div>
+          <main className="flex-1 ">
+            <ClientLayout >
+              <div className="animate-fade-in w-screen">{children}</div>
             </ClientLayout>
           </main>
         </div>

@@ -265,7 +265,7 @@ export default function SponsorDashboard() {
             </CardHeader>
             <CardContent>
               {scholarships.length === 0 ? (
-                <div className="text-center py-6">
+                <div className="text-center">
                   <p className="text-muted-foreground">
                     You haven't created any scholarships yet.
                   </p>
@@ -400,7 +400,7 @@ export default function SponsorDashboard() {
                           }
                         >
                           {verifyingMilestone ===
-                          `${milestone.scholarshipId}-${milestone.milestoneId}`
+                            `${milestone.scholarshipId}-${milestone.milestoneId}`
                             ? "Verifying..."
                             : "Verify"}
                         </Button>

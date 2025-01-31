@@ -49,10 +49,10 @@ export default function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full">
-      <div className="container flex h-16 items-center justify-between">
+    <header className="sticky top-0 z-50 w-full bg-white">
+      <div className=" flex h-16 items-center justify-around ">
         <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center space-x-2 hover-effect">
+          <Link href="/" className="flex items-center hover-effect">
             <div className="relative">
               <GraduationCap className="h-6 w-6 text-primary" />
               <div className="absolute -inset-1 rounded-full bg-primary/20 blur-sm" />
