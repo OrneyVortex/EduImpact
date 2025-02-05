@@ -3,6 +3,7 @@
 import { Button } from "../components/ui/button";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { WavyBackground } from "@/components/ui/wavy-background";
 import {
   BookOpen,
   Trophy,
@@ -84,7 +85,7 @@ export default function Home() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="min-h-[90vh] relative flex items-center justify-center py-20 overflow-hidden">
+      <section className="min-h-[90vh] relative flex items-center justify-center overflow-hidden">
         {/* Animated background */}
         <div className="absolute inset-0 -z-10">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 animate-gradient" />
@@ -92,6 +93,7 @@ export default function Home() {
           <div className="absolute top-0 -right-4 w-96 h-96 bg-secondary/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000" />
           <div className="absolute -bottom-8 left-20 w-96 h-96 bg-accent/30 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000" />
         </div>
+        <WavyBackground backgroundFill="white" speed="fast" waveWidth="10" />
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -117,11 +119,11 @@ export default function Home() {
             className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80"
           >
             Empowering Tech Innovators Through{" "}
-            <span className="relative">
+            <span className="relative text-blue-600">
               Decentralized
               <motion.div
                 className="absolute -bottom-2 left-0 w-full h-1 bg-primary/30"
-                initial={{ scaleX: 0 }}
+                initial={{ scaleX: 1 }}
                 animate={{ scaleX: 1 }}
                 transition={{ delay: 1, duration: 0.8 }}
               />
